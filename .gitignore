@@ -15,3 +15,5 @@ verification/
 *.pem
 *.key
 *service-account*.json
+.vercel
+.env*
