@@ -1,0 +1,17 @@
+node_modules
+.next
+.env
+.env.local
+*.log
+
+.env*
+!.env.example
+test-results/
+playwright-report/
+*.tsbuildinfo
+.vercel/
+.turbo/
+verification/
+*.pem
+*.key
+*service-account*.json

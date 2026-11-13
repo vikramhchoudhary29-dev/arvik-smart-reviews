@@ -1,0 +1,63 @@
+# Development Log
+
+## 2026-11-11
+
+- Created initial Next.js 16/Tailwind 4 scaffold.
+- Added preliminary Prisma models for businesses, stands, customers, loyalty, transactions, redemptions, review phrases, analytics.
+- Added environment example, safety notes and project context.
+- Known issues: no implemented APIs/auth/OTP/consent UI; no tests/build run; database migration not executed.
+- Next: install dependencies, validate schema, implement verified owner-only auth and business CRUD before customer data collection.
+
+## Phase 1 implementation
+
+- Added Firebase client sign-in and Firebase Admin ID token verification with verified-email ADMIN_EMAILS allowlist.
+- Added protected business list/create/update APIs; slug uniqueness, Google HTTPS URL validation and no hard deletion.
+- Added responsive owner dashboard, business form, status controls and counts.
+- Added shared Prisma client, Firebase helpers, web Firebase environment examples and alias paths.
+- Customer-facing flows and OTP are not implemented. Do not enter production customer data until security and deployment verification.
+
+## 2026-11-12 · Phase 2
+
+- Added owner-protected NFC stand list/create/activation APIs and management screen.
+- Added public stand lookup and customer-facing editable English review suggestions.
+- Added anonymous aggregate copy and Google-click events; removed verbose owner auth debug log.
+- No Prisma schema changes or migrations; no database reset.
+- Environment secrets excluded from distributable ZIP; restore locally from existing configuration.
+- Known limitations: QR artwork, OTP, loyalty, and rate limiting not implemented. Google review submission cannot be verified.
+
+## 2026-11-12 — Complete implementation extension
+
+- Inspected the original ZIP, package lock, schema/init migration, Firebase client/Admin authorization, business/stand CRUD, public routes and prior documentation before implementation. Preserved the stack, original migration, permanent stand codes and optional loyalty entities.
+- Added business contact/address/branding fields, verified-link activation workflow, sanitized drag/drop uploads, business/stand editing and search/status/pagination, guarded deletion and reassignment.
+- Added 11 category groups, 99 idempotent active-template starter phrases, sentiment-aware experience drafts, regeneration, full editing, one-click copy/continue and manual failure fallback.
+- Added PNG/SVG QR downloads, printable stand layout and truthful NTAG213 writing instructions.
+- Added distributed rate buckets, bounded bodies, origin validation, URL allowlisting, safe errors, headers, transactional business/stand audit entries, event deduplication, activity timestamps, date-filtered real analytics/charts/reports and settings/retention cleanup.
+- Created an additive migration from the original schema without connecting to a live database. Tested preservation of a legacy business and permanent stand code in disposable PostgreSQL/PGlite.
+- Found and corrected Zod default application during partial updates; patches now mutate only explicitly supplied keys. Added regression assertions so editing branding cannot silently deactivate a business or re-enable a template.
+- Investigated 15 original audit findings. Added explicit grpc-js 1.14.7, deepmerge-ts 8.0.2 and uuid 11.1.1 overrides rather than forcing Firebase/Prisma major changes. Current npm audit reports zero findings. Prisma generation/migration diff/build and used Firebase Admin initialization paths pass; unused Firestore/Storage APIs are not claimed tested.
+- Added disposable unit/API integration tests and production-server browser tests. Initial browser attempt could not spawn downloaded Chromium; installed Chrome works through PLAYWRIGHT_CHANNEL=chrome. Test fixtures intercept Google navigation and never post reviews.
+- Replaced outdated setup documentation, retained this historical log, added migration/backfill instructions, verification evidence and known launch checks. Complete source package excludes dependencies, builds, secrets and temporary data.
+- Live Neon/Firebase/Google listing/NFC/Vercel verification remains outstanding. No deployment or live database action was performed.
+
+- Final audit extension records verified administrator emails for transactional business, stand, template and settings changes. Final checks: 18 unit/integration tests and three Chrome browser tests pass, build/typecheck/Prisma checks pass, audit zero.
+
+## 2026-11-12 - Task 5: premium dashboard and reports, v0.4.0
+
+- Inspected the existing complete project, event schema/writer/deduplication, auth and APIs before changing analytics. Scoped work to requested Task 5; attached Tasks 1-4 are reference context.
+- Replaced mixed inventory cards and aggregate-all-events bars with ten explained KPIs, separate inventory/activity scopes, labelled visits/clicks trends, independent-event funnel, rankings, business visit distribution and recent-event timeline.
+- Added UTC Today/7-day/30-day/month/custom presets, business/stand/interval filters, explicit pending/applied states, request ordering guard, skeletons, retry and empty states.
+- Added dedicated Reports navigation/page and six report tabs. Template usage is clearly unavailable rather than fabricated. Tables support search, sort, pagination, ratios, filtered summary and generation metadata.
+- Added owner-only CSV and genuine XLSX exports with all matching rows, safe formula-like strings, metadata, numeric percentages, summary and definitions sheets. Added A4 landscape browser Print / Save PDF with repeated headings and page numbers; rendered all three test-report pages and inspected them. Fixed dark-mode PDF margins and scoped named report pages to preserve QR printing.
+- Added a non-destructive date/type index migration, left unapplied to live Neon. Existing data, migrations, deduplication writer, NFC codes, templates and customer review flows remain intact. Aggregate queries run in one repeatable-read transaction and use grouped SQL plus linear entity maps.
+- Added independent ExcelJS parsing (test-only), SQL/date/ratio/export tests, responsive report component browser harness outside app/, and retained original review flow browser tests. fflate is the only added production dependency.
+- Updated project context, operator/setup/migration notes, known limits, verification report and complete-project ZIP delivery. No live migration, deployment or external analytics service was used.
+
+## 2026-11-13 - v0.4.1 startup / API response repair
+
+- Read supplied npm/Prisma/Next terminal output and screenshots. Migration deploy had succeeded; the import-time Prisma Client initialization failure caused API 500 responses before normal handlers, with secondary JSON parsing errors in the UI.
+- Generated Prisma Client 6.19.3 in the user's named Downloads project and verified constructor-only initialization without queries. Did not modify environment files, schema or live data, rerun migrations, or deploy.
+- Added an explicit Prisma-before-Next main entry point for dev/build and initialization validation for start, avoiding reliance on dependency install lifecycle scripts.
+- Added safe shared API object reading for admin requests, uploads/export errors and public lookup/generation; preserved actionable JSON validation errors and editable review text on failure.
+- Updated the seven local runtime files only after comparing them with the delivered Task 5 ZIP. Saved original source copies under work/startup-fix-local-backup.
+- Passed 31 unit/integration tests and nine Chrome browser tests. A clean npm ci --ignore-scripts reproduced a missing client; the fixed entry point generated it and started successfully without real environment files or a live database. Production build and TypeScript checks passed.
+- Supplied STARTUP_FIX.md and a complete corrected project ZIP. User must restart the already running dev server; no new migration is required.

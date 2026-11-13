@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BusinessStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum StampMethod {
+  PER_PURCHASE
+  AMOUNT_BASED
+}
+
+enum EventType {
+  PAGE_VIEW
+  GOOGLE_LINK_CLICK
+  SUGGESTION_GENERATE
+  SUGGESTION_REGENERATE
+  COPY_SUGGESTION
+}
+
+model Business {
+  id              String             @id @default(cuid())
+  name            String
+  category        String             @default("general")
+  contactName     String             @default("")
+  phone           String             @default("")
+  whatsapp        String             @default("")
+  email           String             @default("")
+  address         String             @default("")
+  city            String             @default("")
+  state           String             @default("")
+  pincode         String             @default("")
+  googleMapsUrl   String             @default("")
+  logo            String             @default("")
+  coverImage      String             @default("")
+  description     String             @default("")
+  welcomeMessage  String             @default("")
+  internalNotes   String             @default("")
+  brandColor      String             @default("#10b981")
+  linkTestedAt    DateTime?
+  slug            String             @unique
+  googleReviewUrl String
+  status          BusinessStatus     @default(INACTIVE)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  stands          Stand[]
+  customers       Customer[]
+  loyaltyProgram  LoyaltyProgram?
+  transactions    StampTransaction[]
+  events          AnalyticsEvent[]
+}
+
+model Stand {
+  id           String           @id @default(cuid())
+  businessId   String
+  business     Business         @relation(fields: [businessId], references: [id])
+  code         String           @unique
+  type         String           @default("NFC_QR")
+  location     String           @default("")
+  updatedAt    DateTime         @default(now()) @updatedAt
+  lastActivity DateTime?
+  label        String?
+  active       Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  events       AnalyticsEvent[]
+
+  @@index([businessId])
+}
+
+model Customer {
+  id           String             @id @default(cuid())
+  businessId   String
+  business     Business           @relation(fields: [businessId], references: [id])
+  phone        String
+  name         String?
+  consentAt    DateTime?
+  createdAt    DateTime           @default(now())
+  transactions StampTransaction[]
+  redemptions  RewardRedemption[]
+
+  @@unique([businessId, phone])
+}
+
+model LoyaltyProgram {
+  id                String      @id @default(cuid())
+  businessId        String      @unique
+  business          Business    @relation(fields: [businessId], references: [id])
+  method            StampMethod
+  amountPerStamp    Int?
+  stampsRequired    Int
+  rewardDescription String
+  carryForward      Boolean     @default(false)
+  active            Boolean     @default(true)
+  updatedAt         DateTime    @updatedAt
+}
+
+model StampTransaction {
+  id             String   @id @default(cuid())
+  businessId     String
+  business       Business @relation(fields: [businessId], references: [id])
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id])
+  stamps         Int
+  purchaseAmount Int?
+  reference      String?
+  approvedBy     String
+  createdAt      DateTime @default(now())
+}
+
+model RewardRedemption {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  code       String   @unique
+  stampsUsed Int
+  redeemedAt DateTime @default(now())
+}
+
+model AnalyticsEvent {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id])
+  standId    String?
+  stand      Stand?    @relation(fields: [standId], references: [id])
+  dedupKey   String?   @unique
+  type       EventType
+  createdAt  DateTime  @default(now())
+
+  @@index([createdAt, type])
+  @@index([businessId, createdAt])
+  @@index([standId, createdAt])
+}
+
+model ReviewPhrase {
+  sentiment String   @default("neutral")
+  id        String   @id @default(cuid())
+  category  String
+  tag       String
+  text      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([category, sentiment, active])
+}
+
+model ApplicationSettings {
+  id            String   @id @default("default")
+  supportEmail  String   @default("")
+  retentionDays Int      @default(90)
+  updatedAt     DateTime @updatedAt
+}
+
+model RateLimit {
+  key       String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model AdminAudit {
+  actorEmail String   @default("")
+  id         String   @id @default(cuid())
+  action     String
+  targetId   String
+  createdAt  DateTime @default(now())
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  mime      String
+  bytes     Bytes
+  createdAt DateTime @default(now())
+}
