@@ -70,3 +70,13 @@
 - Shared hardened upload/export implementations between separately authorized admin/owner endpoints. Added transaction audit entries for assignments, staff and owner branding/settings changes; setup links are never persisted/logged.
 - Added four-table additive migration, pending explicit live-database approval. Isolated migration/integration checks passed; no seed/backfill or real client accounts were created.
 - Added real-API/isolated-database browser fixture for owner UI; Firebase provider mocked in fixture only. Production build and initial 40 unit/integration checks passed. Final browser and verification results recorded in TESTING_RESULTS.md.
+
+## v0.5.0 approved production rollout — 2026-11-16
+
+- User explicitly approved the four-table additive live migration and deployment.
+- Published application commit `0e6a9d9a80754b955a0082afe1c5933a1095b396` to the existing GitHub main branch; Vercel production deployment `dpl_EJkEUrg2ytrPaAncJGfEwtKfBs2j` reached READY at `https://arvik-smart-reviews.vercel.app`.
+- Production preflight matched the configured Firebase project, verified all three previous migration checksums, and confirmed exactly the approved migration was pending. Created a local, gitignored preservation backup of existing business/stand/template/event rows. Credentials and backup data are excluded from deliverables.
+- Applied `20261116090000_business_owner_experience` with Prisma migrate deploy against the existing direct Neon endpoint. All four migrations are recorded complete.
+- Before/after comparison verified every original row unchanged: 1 business, 1 stand, 99 templates and 24 analytics events. New tables start empty; no test owner/staff/client records, seed, cleanup, backfill or fake review events were inserted.
+- Live Chrome smoke checks passed: both login screens, anonymous owner redirect, protected API 401 responses, existing active stand lookup, business-branded mobile/desktop rendering and no browser exceptions/overflow. Production PAGE_VIEW/event requests were intercepted during browser smoke tests to avoid contaminating analytics. No generation/copy/Google-click event was submitted in production.
+- Onboarding remains an operational step: Super Admin assigns a real owner under Business Owners; privately delivers a setup link if needed; owner verifies email and adds real staff/enables the question. No live password reset or verification email was sent during deployment verification.

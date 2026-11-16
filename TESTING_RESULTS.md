@@ -78,3 +78,11 @@ Prisma Client was also generated in the user's actual Downloads project; constru
 - Customer screenshots inspected: business-first light theme, category text, optional staff selector, editable critical-feedback drafts, contrast-aware buttons and copy/manual fallback. Owner loaded mobile/desktop dashboard screenshots inspected.
 - Initial browser failures identified a localhost/127.0.0.1 origin mismatch in the isolated fixture and an ambiguous test label after the accessible page redesign. Corrected fixture origin and section label; all affected flows subsequently passed.
 - Physical NFC/QR devices, real Firebase email delivery/password setup and live owner sign-in are not proved by isolated tests. Live database migration is a separate approval-gated operation. No live migration, reset, cleanup, seed/backfill, owner grant or staff addition was performed during these checks.
+
+### v0.5.0 live smoke — 2026-11-16
+
+- Vercel production READY for application commit `0e6a9d9a80754b955a0082afe1c5933a1095b396` at `https://arvik-smart-reviews.vercel.app`.
+- Approved migration applied; historical migration checksums verified; every original business/stand/template/event row unchanged (1 / 1 / 99 / 24 respectively). No seed/backfill/cleanup or fake owner/staff data inserted.
+- Installed Chrome: Owner and Super Admin login pages return 200/render; anonymous `/owner` redirects to login; owner me/business/analytics/reports/QR and admin owner endpoints reject unauthenticated requests with 401. Existing active stand's public API returns the new payload; actual business-branded light customer UI loads on phone/desktop without overflow or browser exceptions.
+- Real logo image response checked (200 WebP) and screenshot capture waits for image decode. Deployment browser event posts intercepted; no analytics counts were fabricated by verification.
+- New owner/staff tables empty by design. A real owner must be assigned by Super Admin, receive/setup their password, verify email and enable real staff selection. End-to-end production inbox delivery and an actual business-owner sign-in are not claimed verified.

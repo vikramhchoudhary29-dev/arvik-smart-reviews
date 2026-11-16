@@ -68,3 +68,7 @@ Stop if older migrations are pending, Prisma reports drift/failed migrations, or
 After migration: sign in as Super Admin → Business Owners → grant access → privately deliver a setup link if needed. Owner verifies email and signs in → Staff → add real staff and enable selection. Test one existing NFC URL, including critical feedback and manual clipboard fallback. Do not create fake client data to test production.
 
 Code is backward compatible with the previous schema for existing public review pages: missing new config tables disable staff selection; new feature routes show 503. Roll back application code if needed without dropping the new tables or deleting historical mentions. Cleanup applies the configured event-retention window to staff mentions too; it is an explicit maintenance command, never run as part of this upgrade.
+
+### Production activation — 2026-11-16
+
+The user approved and the task applied `20261116090000_business_owner_experience` to the existing production Neon database. All four migrations are complete. Existing business, stand/code, template and event rows were compared before/after and are unchanged. Do not re-run initialisation SQL or seed for this upgrade. The four new tables start empty; assign a real owner through the Super Admin UI to begin onboarding.

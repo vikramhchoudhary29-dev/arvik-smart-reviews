@@ -54,3 +54,9 @@ The reported API/JSON failures were caused by missing generated Prisma Client af
 - Public review UI is scoped light theme with prominent business branding, contrast-aware brand buttons, optional cover, category wording, clearly labelled sections and existing same-tab copy/Google/manual fallback.
 - Additive migration `20261116090000_business_owner_experience`: four new tables, no existing records rewritten. Public lookup tolerates pending migration; new owner features return clear 503 until tables exist. No migration runs during deployment.
 - Tests use isolated PGlite and fixture Firebase verification. There is no test-auth bypass in shipped application code. Live owner password setup/email delivery and physical NFC/QR checks remain separate rollout checks.
+
+### Live v0.5.0 status — 2026-11-16
+
+- Code deployed to the existing Smart Reviews Vercel project and approved additive migration applied successfully.
+- Verified existing 1 business, 1 stand, 99 templates and 24 analytics events unchanged; new owner/staff tables empty.
+- Live public branding and unauthenticated access boundaries checked. Owner invitation/email delivery and a real owner's first login remain human onboarding checks; no real accounts or staff were created as test fixtures in production.
