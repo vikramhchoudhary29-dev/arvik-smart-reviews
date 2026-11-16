@@ -57,8 +57,8 @@ export default function Login() {
 
         throw new Error(
           response.status === 401
-            ? 'This account is not authorized as an owner. Check ADMIN_EMAILS and Firebase Admin configuration.'
-            : 'Could not verify owner access. Please try again.',
+            ? 'This account is not authorized as a Super Admin. Check ADMIN_EMAILS and Firebase Admin configuration.'
+            : 'Could not verify Super Admin access. Please try again.',
         );
       }
 
@@ -78,7 +78,7 @@ export default function Login() {
       >
         <p className="text-emerald-400 font-semibold">ARVIK DIGITAL</p>
 
-        <h1 className="text-3xl font-bold">Owner login</h1>
+        <h1 className="text-3xl font-bold">Super Admin login</h1>
 
         <label className="block text-sm">
           Email

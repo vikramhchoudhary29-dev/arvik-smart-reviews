@@ -61,3 +61,12 @@
 - Updated the seven local runtime files only after comparing them with the delivered Task 5 ZIP. Saved original source copies under work/startup-fix-local-backup.
 - Passed 31 unit/integration tests and nine Chrome browser tests. A clean npm ci --ignore-scripts reproduced a missing client; the fixed entry point generated it and started successfully without real environment files or a live database. Production build and TypeScript checks passed.
 - Supplied STARTUP_FIX.md and a complete corrected project ZIP. User must restart the already running dev server; no new migration is required.
+
+## 2026-11-16 — v0.5.0 implementation
+
+- Implemented Business Owner access management, assignment/revocation, login/password recovery/email verification, tenant-scoped analytics/reports/QR and owner workspace.
+- Added optional category-aware staff configuration, public staff selection, neutral editable name attribution and deduplicated staff-generation counts.
+- Redesigned customer page with business-first light branding, contrast-aware buttons and preserved Google/clipboard/error/privacy flows.
+- Shared hardened upload/export implementations between separately authorized admin/owner endpoints. Added transaction audit entries for assignments, staff and owner branding/settings changes; setup links are never persisted/logged.
+- Added four-table additive migration, pending explicit live-database approval. Isolated migration/integration checks passed; no seed/backfill or real client accounts were created.
+- Added real-API/isolated-database browser fixture for owner UI; Firebase provider mocked in fixture only. Production build and initial 40 unit/integration checks passed. Final browser and verification results recorded in TESTING_RESULTS.md.

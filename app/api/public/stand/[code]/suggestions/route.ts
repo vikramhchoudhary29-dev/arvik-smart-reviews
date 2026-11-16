@@ -6,6 +6,7 @@ import { activeStand, unavailable, limited } from '@/lib/http';
 import { categories } from '@/lib/categories';
 import { reviewSuggestions } from '@/lib/review-suggestions';
 import { recordEvent } from '@/lib/events';
+import { mentionStaff } from '@/lib/experience';
 export const POST = route(async (r, c) => {
   if (await limited(r, 'suggestions', 20))
     return NextResponse.json(
@@ -20,11 +21,29 @@ export const POST = route(async (r, c) => {
       notes: z.string().max(1500),
       variation: z.number().int().min(0).max(100000),
       eventId: z.uuid(),
+      staffId: z.string().max(100).optional(),
     })
     .strict()
     .parse(await r.json());
   const stand = await activeStand(code);
   if (!stand) return unavailable();
+  let staff = null;
+  if (input.staffId) {
+    const config = await prisma.businessExperience.findUnique({
+      where: { businessId: stand.businessId },
+    });
+    staff = config?.staffEnabled
+      ? await prisma.staffMember.findFirst({
+          where: { id: input.staffId, businessId: stand.businessId, active: true },
+          select: { id: true, name: true, role: true },
+        })
+      : null;
+    if (!staff)
+      return NextResponse.json(
+        { error: 'That staff member is no longer available. Please update your selection.' },
+        { status: 400 },
+      );
+  }
   if (
     input.aspects.some(
       (a) => !(categories[stand.business.category] || categories.general).includes(a),
@@ -46,10 +65,12 @@ export const POST = route(async (r, c) => {
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
+  suggestions = mentionStaff(suggestions, staff);
   await recordEvent(
     stand,
     input.variation ? 'SUGGESTION_REGENERATE' : 'SUGGESTION_GENERATE',
     input.eventId,
+    staff?.id,
   );
   return NextResponse.json({ suggestions });
 });

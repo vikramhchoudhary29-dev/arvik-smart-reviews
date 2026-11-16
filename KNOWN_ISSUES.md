@@ -27,3 +27,11 @@ This release is locally verified, not declared production-ready.
 ## v0.4.1 startup status
 
 The reported missing-generated-client/JSON-parser failures are corrected. Existing running dev processes must be restarted (Ctrl+C, npm run dev) to pick up the generated client and startup entry point. Dev/build now generate explicitly even if install hooks were skipped. No migration rerun is required. Underlying server failures still need their terminal log investigated; safe response handling reports them without presenting raw HTML or JSON parser exceptions. Actual Firebase/Neon end-to-end application verification remains a user-environment check after restart.
+
+## v0.5.0 boundaries
+
+- Real Firebase owner invitation/password reset/verification email delivery requires a real owner account and inbox. Provider responses are mocked only in isolated tests; live account onboarding must be smoke-tested by the Super Admin/owner.
+- Setup links are generated on demand for manual private delivery; the app does not send invitation emails automatically. No new transactional email service was introduced.
+- Staff-generation counts do not prove published reviews or staff service quality. Renamed staff display under their current display name; historical counts keep their staff ID. Deactivation preserves history.
+- New features require the additive migration. Existing public pages have a tested schema-pending fallback; this is not a substitute for activating the new tables.
+- Existing physical NFC writing/printed QR and real-device Google/Safari behavior still require physical checks. No guaranteed star ratings, review gating or automated review posting was added.

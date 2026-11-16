@@ -34,7 +34,7 @@ export function exportMetadata(
     ['Interval', data.filters.interval],
     ['Search', query || 'None'],
     ['Sort', sort + ' ' + direction],
-    ['Scope', 'Activity is date/entity filtered. Inventory is platform-wide current records.'],
+    ['Scope', data.notes[0]],
   ];
 }
 export function csvCell(value: Cell) {

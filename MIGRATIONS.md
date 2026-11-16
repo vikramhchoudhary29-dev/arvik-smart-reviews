@@ -46,3 +46,25 @@ Prefer a forward corrective migration. Do not remove migration rows or drop new 
 The only new migration for Task 5 is 20261112170000_analytics_time_index. It creates AnalyticsEvent_createdAt_type_idx on (createdAt,type) to support platform-wide date-range scans. It contains no DROP, DELETE, UPDATE or data backfill. Business/stand IDs, codes, template records, stored review URLs and existing link confirmations are not changed. No re-confirmation is needed when upgrading an already configured v0.3.0 installation.
 
 Review the SQL, test it on an isolated Neon branch, back up and obtain approval before applying to live Neon. Use the same approved direct-endpoint migrate status / migrate deploy procedure above. The standard CREATE INDEX can temporarily block writes and consumes index storage on large tables; plan the approved migration window based on the real table size. No live query plan/load test or production index build was performed here. Local tests apply all three migration files to disposable PostgreSQL/PGlite instances.
+
+## v0.5.0 — additive Business Owner and staff migration
+
+Migration: `prisma/migrations/20261116090000_business_owner_experience/migration.sql`.
+
+Adds **only four new tables** and their indexes/foreign keys: BusinessOwner (Firebase UID/business assignments), BusinessExperience (optional staff-question settings), StaffMember (display names/roles/status) and StaffMention (deduplicated generation attribution). No existing columns are changed. No DROP, DELETE, UPDATE or data backfill is included. No owner account, staff entry or fake analytics is seeded. Staff starts disabled by default.
+
+Reviewed and exercised on disposable PostgreSQL/PGlite by owner integration tests, including legacy code preservation and migration-pending public fallback. Live execution requires explicit user approval and an existing backup/recovery point. Do not reset the database or run `db push`. Do not re-run old initialisation SQL manually.
+
+```powershell
+# Configure DATABASE_URL locally to the APPROVED target; never paste it into chat.
+npx prisma migrate status
+# Confirm that only 20261116090000_business_owner_experience is pending.
+npx prisma migrate deploy
+npx prisma migrate status
+```
+
+Stop if older migrations are pending, Prisma reports drift/failed migrations, or the target is not the intended database. Resolve the actual state before continuing. No seed command is required. The app does not auto-run migrations during build/deploy. Do not include `.env*`, `.vercel` or database backups in ZIPs.
+
+After migration: sign in as Super Admin → Business Owners → grant access → privately deliver a setup link if needed. Owner verifies email and signs in → Staff → add real staff and enable selection. Test one existing NFC URL, including critical feedback and manual clipboard fallback. Do not create fake client data to test production.
+
+Code is backward compatible with the previous schema for existing public review pages: missing new config tables disable staff selection; new feature routes show 503. Roll back application code if needed without dropping the new tables or deleting historical mentions. Cleanup applies the configured event-retention window to staff mentions too; it is an explicit maintenance command, never run as part of this upgrade.

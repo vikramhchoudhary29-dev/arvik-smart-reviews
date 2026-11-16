@@ -55,6 +55,9 @@ model Business {
   loyaltyProgram  LoyaltyProgram?
   transactions    StampTransaction[]
   events          AnalyticsEvent[]
+  owners          BusinessOwner[]
+  staff           StaffMember[]
+  experience      BusinessExperience?
 }
 
 model Stand {
@@ -178,4 +181,56 @@ model MediaAsset {
   mime      String
   bytes     Bytes
   createdAt DateTime @default(now())
+}
+
+model BusinessOwner {
+  id          String   @id @default(cuid())
+  firebaseUid String
+  email       String
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([firebaseUid, businessId])
+  @@index([firebaseUid, active])
+  @@index([businessId])
+}
+
+model BusinessExperience {
+  businessId   String   @id
+  business     Business @relation(fields: [businessId], references: [id])
+  staffEnabled Boolean  @default(false)
+  staffQuestion String  @default("")
+  updatedAt    DateTime @updatedAt
+}
+
+model StaffMember {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  name       String
+  role       String   @default("")
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  mentions   StaffMention[]
+
+  @@index([businessId, active])
+}
+
+// Each successful generation request can mention at most one selected staff member.
+// Kept separate so existing analytics and historical events are unchanged.
+model StaffMention {
+  id         String      @id @default(cuid())
+  dedupKey   String      @unique
+  businessId String
+  standId    String
+  staffId    String
+  staff      StaffMember @relation(fields: [staffId], references: [id])
+  createdAt  DateTime    @default(now())
+
+  @@index([businessId, createdAt])
+  @@index([staffId, createdAt])
 }

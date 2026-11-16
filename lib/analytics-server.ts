@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { ZodError } from 'zod';
 import { prisma } from './prisma';
 import { parseAnalyticsFilters, timeBounds, aggregateSeries } from './analytics-filters';
 import {
@@ -11,8 +12,25 @@ import {
   type AnalyticsSnapshot,
   type SeriesPoint,
 } from './analytics-model';
-export async function analyticsSnapshot(q: URLSearchParams, now = new Date()) {
+export async function analyticsSnapshot(
+  q: URLSearchParams,
+  now = new Date(),
+  scopeBusinessId?: string,
+) {
   const filters = parseAnalyticsFilters(q, now);
+  if (scopeBusinessId) {
+    filters.businessId = scopeBusinessId;
+    if (
+      filters.standId &&
+      !(await prisma.stand.findFirst({
+        where: { id: filters.standId, businessId: scopeBusinessId },
+        select: { id: true },
+      }))
+    )
+      throw new ZodError([
+        { code: 'custom', message: 'Stand not available for this business.', path: ['standId'] },
+      ]);
+  }
   const bounds = timeBounds(filters);
   const where = {
     createdAt: bounds,
@@ -38,8 +56,16 @@ export async function analyticsSnapshot(q: URLSearchParams, now = new Date()) {
         tx.$queryRaw<Array<{ day: string; type: EventName; count: bigint }>>(
           Prisma.sql`SELECT to_char("createdAt",'YYYY-MM-DD') AS day,type::text,count(*) FROM "AnalyticsEvent" WHERE "createdAt">=${bounds.gte} AND "createdAt"<${bounds.lt} ${filters.businessId ? Prisma.sql`AND "businessId"=${filters.businessId}` : Prisma.empty} ${filters.standId ? Prisma.sql`AND "standId"=${filters.standId}` : Prisma.empty} GROUP BY day,type ORDER BY day`,
         ),
-        tx.business.groupBy({ by: ['status'], _count: true }),
-        tx.stand.groupBy({ by: ['active'], _count: true }),
+        tx.business.groupBy({
+          by: ['status'],
+          where: scopeBusinessId ? { id: scopeBusinessId } : {},
+          _count: true,
+        }),
+        tx.stand.groupBy({
+          by: ['active'],
+          where: scopeBusinessId ? { businessId: scopeBusinessId } : {},
+          _count: true,
+        }),
         tx.analyticsEvent.findMany({
           where,
           take: 20,
@@ -50,10 +76,12 @@ export async function analyticsSnapshot(q: URLSearchParams, now = new Date()) {
           },
         }),
         tx.business.findMany({
+          where: scopeBusinessId ? { id: scopeBusinessId } : {},
           select: { id: true, name: true, status: true },
           orderBy: { name: 'asc' },
         }),
         tx.stand.findMany({
+          where: scopeBusinessId ? { businessId: scopeBusinessId } : {},
           select: {
             id: true,
             label: true,
@@ -135,6 +163,7 @@ export async function analyticsSnapshot(q: URLSearchParams, now = new Date()) {
         );
       const snapshot: AnalyticsSnapshot = {
         generatedAt: now.toISOString(),
+        inventoryScope: scopeBusinessId ? 'business' : 'platform',
         filters,
         inventory: {
           totalBusinesses: businesses.reduce((n, b) => n + b._count, 0),
@@ -162,7 +191,11 @@ export async function analyticsSnapshot(q: URLSearchParams, now = new Date()) {
           type: r.type,
           createdAt: r.createdAt.toISOString(),
           businessName: r.business.name,
-          standName: r.stand?.label || r.stand?.code || 'Unassigned stand',
+          standName: scopeBusinessId
+            ? standOptions.find((s) => s.id === r.standId)?.label ||
+              standOptions.find((s) => s.id === r.standId)?.code ||
+              'Unassigned historical stand'
+            : r.stand?.label || r.stand?.code || 'Unassigned stand',
         })),
         templateUsage: {
           supported: false,
@@ -170,7 +203,9 @@ export async function analyticsSnapshot(q: URLSearchParams, now = new Date()) {
             'Template IDs were not recorded in historical analytics. Template usage cannot be reconstructed from generation counts.',
         },
         notes: [
-          'All activity uses the selected UTC calendar dates and recorded business/stand IDs at event time. Inventory counts are platform-wide current records and ignore activity filters.',
+          scopeBusinessId
+            ? 'All activity and inventory are restricted to your selected business. Activity uses selected UTC calendar dates; inventory counts are current all-time records.'
+            : 'All activity uses the selected UTC calendar dates and recorded business/stand IDs at event time. Inventory counts are platform-wide current records and ignore activity filters.',
           'Google clicks / visits is an event ratio, not a unique-visitor conversion rate. It can exceed 100% when people click repeatedly. Zero visits gives N/A.',
           'Funnel stages are independent event counts; regenerations are separate from initial generation. There is no session/cohort or published-review tracking.',
           'New event IDs are deduplicated by the existing unique key. Legacy rows without keys remain counted as recorded; duplicates cannot be inferred safely.',

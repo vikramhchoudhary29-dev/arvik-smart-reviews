@@ -52,7 +52,7 @@ npm run format:check
 npm audit
 ```
 
-The browser suite starts a disposable local database and production-mode server on **4317**, plus an isolated analytics component/SQL fixture harness on **4318**. Keep both ports free. On this Windows host the downloaded Chromium executable could not spawn, so the verified run used installed Chrome:
+The browser suite starts a disposable local database and production-mode server on **4317**, plus isolated analytics and owner component/API/SQL fixtures on **4318** and **4319**. Keep all three ports free. On this Windows host the downloaded Chromium executable could not spawn, so the verified run used installed Chrome:
 
 ```powershell
 $env:PLAYWRIGHT_CHANNEL = 'chrome'
@@ -116,8 +116,47 @@ Use a compatible NFC phone and a trusted NFC writer to store the stand's permane
 
 All /api/admin endpoints require a Firebase ID token, server-side revocation check, verified email and the server allowlist. APIs reject unknown fields, invalid URLs, bad request bodies and cross-origin writes. Admin and public rate limits use shared database buckets with keyed hashes of proxy-supplied IP addresses, not raw stored IPs. Event IDs deduplicate retries per stand/type. This reduces accidental duplicates; it cannot prove unique humans or prevent determined analytics manipulation. Business, stand, template and settings mutations write transactional audit entries with the verified administrator email. Review drafts/notes are not persisted. React text rendering prevents HTML injection; uploads exclude SVG and are re-encoded.
 
-Review privacy notice, hosting region, retention/backup handling and applicable Indian DPDP obligations with your organization before launch. Existing loyalty/customer tables are preserved but no new loyalty collection, OTP, rewards or business-owner login is enabled.
+Review privacy notice, hosting region, retention/backup handling and applicable Indian DPDP obligations with your organization before launch. Existing loyalty/customer tables are preserved but no new loyalty collection, OTP or rewards collection is enabled. Business Owner access is described below.
 
 ## Project files
 
 PROJECT_CONTEXT.md describes architecture, DEVELOPMENT_LOG.md records changes, CHANGED_FILES.md lists source additions/changes, MIGRATIONS.md covers upgrade safety, TESTING_RESULTS.md records evidence, KNOWN_ISSUES.md names remaining boundaries. verification/ contains final test/build/audit evidence and mobile screenshots. The full ZIP excludes installed dependencies, build caches, real environment files and temporary local databases.
+
+## v0.5.0 — Business Owner, staff mentions and customer branding
+
+- Super Admin: /admin/login → Business Owners → assign an email to an existing business. Firebase accounts are created only through this protected action, when needed; there is no public registration UI or automatic access based on email/domain.
+- Generate a password setup link only when needed and share it privately with the intended owner. This action does **not** send email automatically. The link is short-lived, not stored/logged, and resets the account password. Owners verify their email using Firebase's verification email at first sign-in. Existing verified accounts can sign in directly.
+- Owner sign-in: /owner/login. Forgotten-password and first-login verification use the existing Firebase Email/Password provider. Configure Firebase authorized domains and email templates for your actual application domain. No new authentication provider or API key is needed.
+- Owner workspace: Overview, Analytics, My Stands (preview/QR download), Reports (CSV/XLSX/A4 print), Staff and Branding. Every request requires a verified, non-revoked Firebase ID token **and** an active UID/business assignment. Each business selector and report is scoped server-side; business IDs from a browser never grant access.
+- Owners edit logo, brand colour and welcome message only. Business name/category, Google destination and stand activation remain Super Admin-controlled. Logo uploads reuse validated, re-encoded PNG/JPEG/WebP handling and the 1 MB limit.
+- Staff: add/edit/activate/deactivate up to 100 records; optional role; enable/disable the public question; custom wording or category default. Use staff-approved display names. Inactive staff are hidden and rejected by generation APIs; historical counts remain.
+- Mentions count successful generation requests (including regenerations), deduplicated by the analytics event. They are not three mentions per three drafts, published reviews, unique people, staff ratings or review-copy counts. Staff name/role attribution is neutral and editable; no praise is invented. Selected UTC date filters apply to mention counts.
+- Customer page: business-first light theme, optional cover/logo, accessible brand-colour buttons, category wording, optional staff choice, editable drafts, existing clipboard/manual fallback and Google workflow. All sentiments can continue to Google. No auto-posting or review gating.
+- Apply the additive migration in MIGRATIONS.md **only after live-database approval**. No seed is required for this upgrade. Existing stand codes/URLs, templates, historical events and Google-link confirmations remain unchanged.
+- Without the new tables, existing public review pages continue with staff disabled. New owner/admin-owner features return a clear 503 database-update message. This permits a safe code rollout while migration is pending; it does not mean the new features are activated.
+
+### Exact local setup (PowerShell)
+
+Copy .env.example to .env and fill in the existing database/Firebase settings locally. Do not commit environment files. For a new isolated development database, apply all migrations; for an existing database, review migration status first.
+
+```powershell
+npm ci
+npx prisma generate
+npx prisma migrate status
+# Only against your approved development/upgrade database:
+npx prisma migrate deploy
+npm run dev
+# Open http://localhost:3000/owner/login or /admin/login
+```
+
+Verification (disposable databases; no seed/live credentials required):
+
+```powershell
+npm run typecheck
+npm test
+npm run build
+$env:PLAYWRIGHT_CHANNEL = 'chrome'
+npm run test:e2e
+Remove-Item Env:PLAYWRIGHT_CHANNEL
+npm run format:check
+```

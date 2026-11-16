@@ -57,6 +57,7 @@ export function Shell({ section, children }: { section: string; children: React.
             ['Review Templates', 'templates'],
             ['Analytics', 'analytics'],
             ['Reports', 'reports'],
+            ['Business Owners', 'owners'],
             ['Settings', 'settings'],
           ].map(([name, key]) => (
             <Link

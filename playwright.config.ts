@@ -9,6 +9,12 @@ export default defineConfig({
   },
   webServer: [
     {
+      command: 'npx tsx tests/owner-browser-server.ts',
+      url: 'http://127.0.0.1:4319',
+      reuseExistingServer: false,
+      timeout: 60000,
+    },
+    {
       command: 'npx tsx tests/browser-server.ts',
       url: 'http://localhost:4317',
       reuseExistingServer: false,

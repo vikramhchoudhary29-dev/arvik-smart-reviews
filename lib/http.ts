@@ -53,6 +53,18 @@ export function route(fn: (r: NextRequest, c: Context) => Promise<Response>, adm
       if (e instanceof SyntaxError)
         return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === 'P2021')
+          return NextResponse.json(
+            {
+              error: 'This feature is awaiting the database update. Please contact Arvik support.',
+            },
+            { status: 503 },
+          );
+        if (e.code === 'P2003')
+          return NextResponse.json(
+            { error: 'Related records exist. Deactivate this record to preserve history.' },
+            { status: 409 },
+          );
         if (e.code === 'P2002')
           return NextResponse.json({ error: 'Already exists' }, { status: 409 });
         if (e.code === 'P2025') return NextResponse.json({ error: 'Not found' }, { status: 404 });

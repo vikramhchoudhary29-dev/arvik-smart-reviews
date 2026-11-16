@@ -4,6 +4,7 @@ import { route } from '@/lib/http';
 import { activeStand, unavailable, limited } from '@/lib/http';
 import { googleReviewUrl } from '@/lib/validation';
 import { categories } from '@/lib/categories';
+import { publicExperience, experiencePrompt } from '@/lib/experience';
 export const GET = route(async (r, c) => {
   if (await limited(r, 'lookup', 120))
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -14,6 +15,9 @@ export const GET = route(async (r, c) => {
   return NextResponse.json(
     {
       businessName: b.name,
+      location: [b.city, b.state].filter(Boolean).join(', '),
+      experiencePrompt: experiencePrompt(b.category),
+      ...(await publicExperience(b.id, b.category)),
       category: b.category,
       logo: b.logo,
       coverImage: b.coverImage,

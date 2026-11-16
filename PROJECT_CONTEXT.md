@@ -42,3 +42,15 @@ Local TypeScript/build/tests/audit and mobile browser flow evidence are in TESTI
 ## v0.4.1 - 13 November 2026 startup repair
 
 The reported API/JSON failures were caused by missing generated Prisma Client after installation, not a failed migration. scripts/run-next.mjs explicitly generates the pinned client before dev/build and validates it for start; this does not depend on install hooks. lib/api-response.ts is shared by admin/public/upload/export response handling to avoid raw empty/HTML JSON parser errors. Existing schema, migrations, auth, event writer, suggestion engine and clipboard/Google logic are unchanged. See STARTUP_FIX.md and verification/startup-fix/ for restart instructions and clean-install proof.
+
+## v0.5.0 — Business Owner and branded customer experience (2026-11-16)
+
+- Reuses Firebase Email/Password. Existing `requireOwner` retains its historical name but still means allowlisted **Super Admin**, never ordinary Business Owner.
+- Business Owner membership is stored in BusinessOwner keyed by Firebase UID + business ID; every protected owner route verifies revocation/email verification and membership. Owner analytics/report queries scope events, inventory, entity options, names and exports to one assigned business.
+- New `/owner` workspace has overview, analytics, stand previews/QR downloads, CSV/XLSX/A4-print reports, staff and branding. Super Admin `/admin/owners` manages assignments and generates private setup links on demand; no automated mail is sent by server code.
+- Business identity, Google URL and stand activation remain Super Admin-owned. Owner branding fields are logo, brand colour and welcome message only.
+- Staff configuration is separate in BusinessExperience. StaffMember supports active/inactive display names and optional roles. Category defaults/custom question, skip selection and feature toggle are supported. Public suggestions validate staff against active stand business; all drafts use neutral attribution and remain editable for every sentiment.
+- StaffMention stores one deduplicated successful generation attribution per request, not per draft or Google review. UTC date filters and shared retention apply. Review text/customer identity are not persisted.
+- Public review UI is scoped light theme with prominent business branding, contrast-aware brand buttons, optional cover, category wording, clearly labelled sections and existing same-tab copy/Google/manual fallback.
+- Additive migration `20261116090000_business_owner_experience`: four new tables, no existing records rewritten. Public lookup tolerates pending migration; new owner features return clear 503 until tables exist. No migration runs during deployment.
+- Tests use isolated PGlite and fixture Firebase verification. There is no test-auth bypass in shipped application code. Live owner password setup/email delivery and physical NFC/QR checks remain separate rollout checks.

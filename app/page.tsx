@@ -13,6 +13,11 @@ export default function Home() {
         <Link className="button" href="/admin/login">
           Administrator sign in
         </Link>
+        <p>
+          <Link className="button" href="/owner/login">
+            Business Owner sign in
+          </Link>
+        </p>
       </section>
     </main>
   );

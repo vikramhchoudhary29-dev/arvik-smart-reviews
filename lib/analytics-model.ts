@@ -54,6 +54,7 @@ export type Performance = Counts & {
 export type SeriesPoint = Counts & { period: string };
 export type AnalyticsSnapshot = {
   generatedAt: string;
+  inventoryScope?: 'business' | 'platform';
   filters: AnalyticsFilters;
   inventory: {
     totalBusinesses: number;
@@ -182,7 +183,10 @@ export function reportTable(data: AnalyticsSnapshot, kind: ReportKind): ReportTa
           } as Record<string, string>
         )[key],
         value,
-        scope: 'Platform-wide current inventory; unaffected by filters',
+        scope:
+          data.inventoryScope === 'business'
+            ? 'Selected business current inventory; unaffected by activity dates'
+            : 'Platform-wide current inventory; unaffected by filters',
       })),
       ...metrics.map((c) => ({
         metric: c.label,

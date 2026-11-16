@@ -10,6 +10,7 @@ async function main() {
     '20261111063631_init',
     '20261112090000_complete_reviews',
     '20261112170000_analytics_time_index',
+    '20261116090000_business_owner_experience',
   ])
     await db.exec(readFileSync('prisma/migrations/' + m + '/migration.sql', 'utf8'));
   const server = new PGLiteSocketServer({ db, port: 0, maxConnections: 8 });
@@ -34,6 +35,12 @@ async function main() {
   });
   await prisma.stand.create({
     data: { businessId: 'browser-business', code: 'browser-test', label: 'Counter' },
+  });
+  await prisma.businessExperience.create({
+    data: { businessId: 'browser-business', staffEnabled: true, staffQuestion: '' },
+  });
+  await prisma.staffMember.create({
+    data: { businessId: 'browser-business', name: 'Priya', role: 'Advisor' },
   });
   await seed(prisma);
   await prisma.$disconnect();

@@ -90,3 +90,25 @@ test('failed suggestion response preserves the customer editable draft', async (
     'My own genuine feedback.',
   );
 });
+
+test('optional category staff selection appears in editable drafts for critical feedback', async ({
+  page,
+}) => {
+  await page.goto('/r/browser-test');
+  await page.getByRole('heading', { name: 'Shree Optical', exact: true }).waitFor();
+  await page
+    .getByLabel('Who helped you during your visit? (optional)')
+    .selectOption({ label: 'Priya · Advisor' });
+  await page.getByRole('button', { name: 'Lens quality', exact: true }).click();
+  await page.getByLabel('How was your experience?').selectOption('critical');
+  await page.getByRole('button', { name: 'Generate three suggestions' }).click();
+  await expect(page.getByLabel('Your review — freely editable')).toHaveValue(/Priya \(Advisor\)/);
+  await expect(page.getByLabel('Your review — freely editable')).not.toHaveValue(
+    /excellent|amazing/i,
+  );
+  await page.screenshot({ path: 'test-results/branded-staff-review.png', fullPage: true });
+  expect(
+    await page.locator('.customer-page').evaluate((e) => getComputedStyle(e).colorScheme),
+  ).toBe('light');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

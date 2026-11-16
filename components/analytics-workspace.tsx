@@ -14,6 +14,7 @@ import {
 import { TrendChart, FunnelChart, Ranking, Distribution } from './analytics-charts';
 type Props = {
   dashboard?: boolean;
+  scopedBusinessId?: string;
   loadSnapshot: (query: URLSearchParams) => Promise<AnalyticsSnapshot>;
   exportReport: (query: URLSearchParams) => Promise<void>;
 };
@@ -202,7 +203,12 @@ function DataTable({
     </section>
   );
 }
-export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportReport }: Props) {
+export function AnalyticsWorkspace({
+  dashboard = false,
+  loadSnapshot,
+  exportReport,
+  scopedBusinessId,
+}: Props) {
   const [draft, setDraft] = useState<FilterDraft>(initial),
     [data, setData] = useState<AnalyticsSnapshot | null>(null),
     [busy, setBusy] = useState(true),
@@ -244,7 +250,7 @@ export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportRepo
     const q = new URLSearchParams(window.location.search);
     const f = {
       ...initial,
-      businessId: q.get('businessId') || '',
+      businessId: scopedBusinessId || q.get('businessId') || '',
       standId: q.get('standId') || '',
     };
     setDraft(f);
@@ -252,7 +258,7 @@ export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportRepo
     return () => {
       sequence.current++;
     };
-  }, [loadSnapshot]);
+  }, [loadSnapshot, scopedBusinessId]);
   const filtersChanged =
     !!data &&
     (draft.preset !== data.filters.preset ||
@@ -316,9 +322,15 @@ export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportRepo
         <header className="analytics-header">
           <div>
             <p className="eyebrow">ARVIK DIGITAL / INTELLIGENCE</p>
-            <h1>{dashboard ? 'Your platform, at a glance.' : 'Reports & insights'}</h1>
+            <h1>
+              {dashboard
+                ? scopedBusinessId
+                  ? 'Your business, at a glance.'
+                  : 'Your platform, at a glance.'
+                : 'Reports & insights'}
+            </h1>
             <p className="muted">
-              A clear view of genuine review interactions across your businesses.
+              A clear view of recorded review interactions. Google clicks are not published reviews.
             </p>
           </div>
           <div className="analytics-header-badge">
@@ -372,10 +384,11 @@ export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportRepo
           <label>
             Business
             <select
+              disabled={Boolean(scopedBusinessId)}
               value={draft.businessId}
               onChange={(e) => setDraft({ ...draft, businessId: e.target.value, standId: '' })}
             >
-              <option value="">All businesses</option>
+              {!scopedBusinessId && <option value="">All businesses</option>}
               {data?.options.businesses.map((b) => (
                 <option value={b.id} key={b.id}>
                   {b.name}
@@ -449,9 +462,11 @@ export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportRepo
               {dashboard ? (
                 <>
                   <div className="metric-section-label">
-                    <h2>Platform inventory</h2>
+                    <h2>{scopedBusinessId ? 'Business inventory' : 'Platform inventory'}</h2>
                     <span>
-                      All-time current records · platform-wide · unaffected by activity filters
+                      {scopedBusinessId
+                        ? 'All-time current records · selected business only'
+                        : 'All-time current records · platform-wide · unaffected by activity filters'}
                     </span>
                   </div>
                   <div className="kpi-grid inventory-grid">
@@ -460,8 +475,9 @@ export function AnalyticsWorkspace({ dashboard = false, loadSnapshot, exportRepo
                         label: 'Total Businesses',
                         value: data.inventory.totalBusinesses,
                         icon: 'business',
-                        description:
-                          'All current business records across the platform, regardless of selected dates or entity filters.',
+                        description: scopedBusinessId
+                          ? 'Current records for your selected business, regardless of selected activity dates.'
+                          : 'All current business records across the platform, regardless of selected dates or entity filters.',
                       },
                       {
                         label: 'Active Businesses',
