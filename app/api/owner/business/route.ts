@@ -11,7 +11,7 @@ export const GET = businessRoute(async (r, identity) => {
   const [settings, staff, mentions, stands] = await Promise.all([
     prisma.businessExperience.findUnique({ where: { businessId } }),
     prisma.staffMember.findMany({
-      where: { businessId },
+      where: { businessId, deletedAt: null },
       orderBy: [{ active: 'desc' }, { name: 'asc' }],
     }),
     prisma.staffMention.groupBy({
@@ -34,7 +34,10 @@ export const GET = businessRoute(async (r, identity) => {
   ]);
   return privateJson({
     business: assignment.business,
-    settings: settings || { staffEnabled: false, staffQuestion: '' },
+    settings: {
+      staffEnabled: settings?.staffEnabled || false,
+      staffQuestion: settings?.staffQuestion || '',
+    },
     defaultQuestion: staffQuestion(assignment.business.category),
     staff: staff.map((s) => ({
       ...s,

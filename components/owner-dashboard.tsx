@@ -7,6 +7,7 @@ import { readApiResponse } from '@/lib/api-response';
 import type { AnalyticsSnapshot } from '@/lib/analytics-model';
 import { AnalyticsWorkspace } from './analytics-workspace';
 import { api } from './admin';
+import { OwnerSubscription } from './owner-subscription';
 
 type Business = {
   id: string;
@@ -34,7 +35,15 @@ type Details = {
   stands: Stand[];
   mentionRange: { from: string; to: string };
 };
-const sections = ['Overview', 'Analytics', 'My Stands', 'Reports', 'Staff', 'Branding'] as const;
+const sections = [
+  'Overview',
+  'Analytics',
+  'My Stands',
+  'Reports',
+  'Staff',
+  'Branding',
+  'Subscription',
+] as const;
 type Section = (typeof sections)[number];
 async function download(url: string, fallback: string) {
   const token = await clientAuth().currentUser?.getIdToken();
@@ -141,7 +150,14 @@ export default function OwnerDashboard() {
                 Only data for this assigned business is available.
               </span>
             </div>
-            {section === 'Overview' || section === 'Analytics' || section === 'Reports' ? (
+            <OwnerSubscription
+              key={selected + (section === 'Subscription' ? 'full' : 'warning')}
+              businessId={selected}
+              full={section === 'Subscription'}
+            />
+            {section === 'Subscription' ? null : section === 'Overview' ||
+              section === 'Analytics' ||
+              section === 'Reports' ? (
               <OwnerAnalytics key={selected + section} businessId={selected} section={section} />
             ) : (
               <OwnerDetails key={selected + section} businessId={selected} section={section} />
@@ -196,7 +212,10 @@ function OwnerDetails({ businessId, section }: { businessId: string; section: Se
         '/api/owner/business?businessId=' + encodeURIComponent(businessId) + query,
       );
       setData(next);
-      setSettings(next.settings);
+      setSettings({
+        staffEnabled: next.settings.staffEnabled,
+        staffQuestion: next.settings.staffQuestion,
+      });
       setBranding({
         logo: next.business.logo,
         brandColor: next.business.brandColor,
@@ -211,7 +230,10 @@ function OwnerDetails({ businessId, section }: { businessId: string; section: Se
       .then((next) => {
         if (cancelled) return;
         setData(next);
-        setSettings(next.settings);
+        setSettings({
+          staffEnabled: next.settings.staffEnabled,
+          staffQuestion: next.settings.staffQuestion,
+        });
         setBranding({
           logo: next.business.logo,
           brandColor: next.business.brandColor,
@@ -333,7 +355,13 @@ function OwnerDetails({ businessId, section }: { businessId: string; section: Se
             onSubmit={(e) => {
               e.preventDefault();
               void run(async () => {
-                await api(base, 'PATCH', { kind: 'experience', values: settings });
+                await api(base, 'PATCH', {
+                  kind: 'experience',
+                  values: {
+                    staffEnabled: settings.staffEnabled,
+                    staffQuestion: settings.staffQuestion,
+                  },
+                });
                 await load(mentionQuery());
               }, 'Staff question saved.');
             }}
@@ -493,6 +521,31 @@ function OwnerDetails({ businessId, section }: { businessId: string; section: Se
                     }
                   >
                     Edit staff
+                  </button>
+                  <button
+                    disabled={busy}
+                    onClick={() => {
+                      if (
+                        !confirm(
+                          'Delete ' +
+                            s.name +
+                            ' from the staff list? Previous mentions remain in reporting history.',
+                        )
+                      )
+                        return;
+                      void run(async () => {
+                        await api(
+                          '/api/owner/staff?businessId=' + encodeURIComponent(businessId),
+                          'DELETE',
+                          { id: s.id },
+                        );
+                        if (staffForm.id === s.id)
+                          setStaffForm({ id: '', name: '', role: '', active: true });
+                        await load(mentionQuery());
+                      }, 'Staff deleted. Previous mention history is preserved.');
+                    }}
+                  >
+                    Delete staff
                   </button>
                 </article>
               ))}

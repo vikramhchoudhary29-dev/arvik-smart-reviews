@@ -62,6 +62,9 @@ test('owner tenant isolation, staff, branding, invitations and historical preser
   const upload = await import('../app/api/owner/upload/route');
   const admin = await import('../app/api/admin/owners/route');
   const invite = await import('../app/api/admin/owners/invite/route');
+  const subscriptions = await import('../app/api/admin/subscriptions/route');
+  const payments = await import('../app/api/admin/subscriptions/payments/route');
+  const ownerSubscription = await import('../app/api/owner/subscription/route');
   const lookup = await import('../app/api/public/stand/[code]/route');
   const suggestions = await import('../app/api/public/stand/[code]/suggestions/route');
   const req = (url: string, method = 'GET', body?: unknown, token = 'owner') =>
@@ -365,6 +368,172 @@ test('owner tenant isolation, staff, branding, invitations and historical preser
           0,
         );
         assert.equal(await prisma.staffMention.count(), 1);
+      },
+    );
+    await t.test(
+      'saved staff settings round-trip accepts disabled, blank and custom questions',
+      async () => {
+        for (const values of [
+          { staffEnabled: false, staffQuestion: '' },
+          { staffEnabled: true, staffQuestion: 'Who served you?' },
+          { staffEnabled: true, staffQuestion: '' },
+        ]) {
+          assert.equal(
+            (
+              await business.PATCH(
+                req('/?businessId=a', 'PATCH', { kind: 'experience', values }),
+                ctx(),
+              )
+            ).status,
+            200,
+          );
+          const dto = await (await business.GET(req('/?businessId=a'), ctx())).json();
+          assert.deepEqual(Object.keys(dto.settings).sort(), ['staffEnabled', 'staffQuestion']);
+          assert.deepEqual(dto.settings, values);
+          assert.equal(
+            (
+              await business.PATCH(
+                req('/?businessId=a', 'PATCH', { kind: 'experience', values: dto.settings }),
+                ctx(),
+              )
+            ).status,
+            200,
+          );
+        }
+      },
+    );
+    await t.test(
+      'delete staff removes selection while retaining mentions and denying cross-tenant/deleted edits',
+      async () => {
+        const other = await prisma.staffMember.findFirstOrThrow({ where: { businessId: 'b' } });
+        assert.equal(
+          (await staff.DELETE(req('/?businessId=a', 'DELETE', { id: other.id }), ctx())).status,
+          403,
+        );
+        assert.equal(
+          (await staff.DELETE(req('/?businessId=a', 'DELETE', { id: memberId }), ctx())).status,
+          200,
+        );
+        const removed = await prisma.staffMember.findUniqueOrThrow({ where: { id: memberId } });
+        assert.ok(removed.deletedAt);
+        assert.equal(removed.active, false);
+        assert.equal(await prisma.staffMention.count({ where: { staffId: memberId } }), 1);
+        const dto = await (await business.GET(req('/?businessId=a'), ctx())).json();
+        assert.ok(!dto.staff.some((s: any) => s.id === memberId));
+        assert.equal(
+          (
+            await staff.POST(
+              req('/?businessId=a', 'POST', {
+                id: memberId,
+                values: { name: 'restore', role: '', active: true },
+              }),
+              ctx(),
+            )
+          ).status,
+          403,
+        );
+      },
+    );
+    await t.test(
+      'yearly subscription/payment management is admin-only and expiry never pauses reviews',
+      async () => {
+        const input = {
+          action: 'create',
+          businessId: 'a',
+          startsOn: '2024-02-29',
+          annualFeePaise: 299900,
+          notes: 'private_subscription_note',
+        };
+        assert.equal((await subscriptions.POST(req('/', 'POST', input), ctx())).status, 401);
+        const response = await subscriptions.POST(req('/', 'POST', input, 'admin'), ctx());
+        assert.equal(response.status, 200);
+        const term = (await response.json()).subscription;
+        assert.equal(term.expiresOn, '2025-02-28');
+        assert.equal(
+          (
+            await subscriptions.POST(
+              req('/', 'POST', { ...input, startsOn: '2024-03-01' }, 'admin'),
+              ctx(),
+            )
+          ).status,
+          400,
+        );
+        let ownerData = await (await ownerSubscription.GET(req('/?businessId=a'), ctx())).json();
+        assert.equal(ownerData.current.status, 'EXPIRED');
+        assert.equal(ownerData.reviewPagePolicy, 'WARNING_ONLY');
+        assert.ok(!JSON.stringify(ownerData).includes('private_subscription_note'));
+        assert.equal((await ownerSubscription.GET(req('/?businessId=b'), ctx())).status, 403);
+        assert.equal((await lookup.GET(req('/'), ctx({ code: 'permanent-a' }))).status, 200);
+        const payment = {
+          subscriptionId: term.id,
+          amountPaise: 150000,
+          paidOn: '2026-01-01',
+          method: 'UPI',
+          reference: 'private_reference',
+        };
+        assert.equal((await payments.POST(req('/', 'POST', payment), ctx())).status, 401);
+        assert.equal((await payments.POST(req('/', 'POST', payment, 'admin'), ctx())).status, 200);
+        ownerData = await (await ownerSubscription.GET(req('/?businessId=a'), ctx())).json();
+        assert.equal(ownerData.current.paymentStatus, 'PARTIAL');
+        assert.equal(ownerData.current.duePaise, 149900);
+        assert.ok(!JSON.stringify(ownerData).includes('private_reference'));
+        assert.equal(
+          (
+            await payments.POST(
+              req('/', 'POST', { ...payment, amountPaise: 150000 }, 'admin'),
+              ctx(),
+            )
+          ).status,
+          400,
+        );
+        assert.equal(
+          (
+            await subscriptions.PATCH(
+              req('/', 'PATCH', { id: term.id, annualFeePaise: 100, notes: '' }, 'admin'),
+              ctx(),
+            )
+          ).status,
+          400,
+        );
+        assert.equal(
+          (
+            await payments.POST(
+              req('/', 'POST', { ...payment, amountPaise: 149900 }, 'admin'),
+              ctx(),
+            )
+          ).status,
+          200,
+        );
+        const paid = await (await ownerSubscription.GET(req('/?businessId=a'), ctx())).json();
+        assert.equal(paid.current.paymentStatus, 'PAID');
+        const pay = await prisma.subscriptionPayment.findFirstOrThrow({
+          where: { subscriptionId: term.id },
+        });
+        assert.equal(
+          (await payments.DELETE(req('/', 'DELETE', { id: pay.id }, 'admin'), ctx())).status,
+          200,
+        );
+        assert.ok(
+          (await prisma.subscriptionPayment.findUniqueOrThrow({ where: { id: pay.id } })).voidedAt,
+        );
+        assert.equal(
+          (
+            await subscriptions.POST(
+              req(
+                '/',
+                'POST',
+                { action: 'renew', businessId: 'a', annualFeePaise: 349900, notes: '' },
+                'admin',
+              ),
+              ctx(),
+            )
+          ).status,
+          200,
+        );
+        assert.equal(await prisma.subscriptionPeriod.count({ where: { businessId: 'a' } }), 2);
+        const renewed = await (await ownerSubscription.GET(req('/?businessId=a'), ctx())).json();
+        assert.equal(renewed.current.status, 'ACTIVE');
+        assert.equal(renewed.current.annualFeePaise, 349900);
       },
     );
     await t.test(

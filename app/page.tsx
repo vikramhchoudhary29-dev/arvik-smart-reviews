@@ -8,7 +8,7 @@ export default function Home() {
         <p>Thoughtful feedback starts with a genuine experience.</p>
         <p className="muted">
           Tap or scan a business stand to share your experience. Businesses and stands are centrally
-          managed by Arvik Digital with a one-time service model.
+          managed by Arvik Digital with yearly business subscriptions.
         </p>
         <Link className="button" href="/admin/login">
           Administrator sign in

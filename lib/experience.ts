@@ -45,7 +45,7 @@ export async function publicExperience(businessId: string, category: string) {
     const config = await prisma.businessExperience.findUnique({ where: { businessId } });
     const staff = config?.staffEnabled
       ? await prisma.staffMember.findMany({
-          where: { businessId, active: true },
+          where: { businessId, active: true, deletedAt: null },
           select: { id: true, name: true, role: true },
           orderBy: { name: 'asc' },
           take: 100,

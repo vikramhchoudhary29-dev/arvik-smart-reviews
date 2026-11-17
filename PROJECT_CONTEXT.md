@@ -1,6 +1,6 @@
 # Project context — Arvik Smart Reviews
 
-Updated 12 November 2026. Owner: Arvik Digital. Centrally managed one-time commercial service; public customers do not sign in. No subscription, paid AI, review incentives or Google submission automation.
+Updated 17 November 2026. Owner: Arvik Digital. Centrally managed yearly subscription service; public customers do not sign in. Manual payment tracking; no auto-debit, paid AI, review incentives or Google submission automation.
 
 ## Architecture
 
@@ -60,3 +60,17 @@ The reported API/JSON failures were caused by missing generated Prisma Client af
 - Code deployed to the existing Smart Reviews Vercel project and approved additive migration applied successfully.
 - Verified existing 1 business, 1 stand, 99 templates and 24 analytics events unchanged; new owner/staff tables empty.
 - Live public branding and unauthenticated access boundaries checked. Owner invitation/email delivery and a real owner's first login remain human onboarding checks; no real accounts or staff were created as test fixtures in production.
+
+## v0.6.0 — yearly subscriptions and staff deletion (2026-11-17)
+
+- User selected warning-only expiry: never suspend or redirect public review pages on subscription expiry. No configured plan means no restriction.
+- New admin `/admin/subscriptions`, private `/api/admin/subscriptions` and payments endpoints manage calendar-year terms, INR fees in integer paise, manual payment ledger/voids and appended renewal history. Payment status and expiry status derive from recorded data. Payment writes and overlapping-term validation run in serializable transactions.
+- Read-only owner `/api/owner/subscription` and workspace Subscription view use active UID/business assignment; private notes/payment references are excluded. Expiring/expired warning displays to the owner; all customer sentiments and Google workflows remain unchanged.
+- Business `renewalWhatsapp` contact is admin-managed and separate from other WhatsApp/contact fields. Manual `wa.me` composer uses the chosen number; 10 Indian digits get +91. No automatic messages, auto-debit, invoicing, gateway, real test payments or fabricated plan fees.
+- Staff settings bug fixed at both server DTO and client payload boundaries. Existing row metadata (`businessId`, `updatedAt`) no longer enters strict validation on resave.
+- Staff Delete is a soft deletion (`deletedAt`, active=false); public/owner lists exclude removed rows and edits cannot restore them. Existing StaffMention and AnalyticsEvent rows remain intact.
+- Migration `20261117090000_yearly_subscriptions_staff_removal`: 2 tables + 2 additive columns, no data deletion/backfill. Migration must precede code rollout. Live execution remains subject to the user's explicit database approval.
+
+### v0.6.0 activation status
+
+Approved additive migration applied on 17 November 2026; existing row values verified unchanged. Plans/payments and renewal contacts intentionally unconfigured until Super Admin enters real commercial terms. Staff saves/deletions use the fixed client/API after a browser refresh.

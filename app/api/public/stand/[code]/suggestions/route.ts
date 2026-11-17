@@ -34,7 +34,7 @@ export const POST = route(async (r, c) => {
     });
     staff = config?.staffEnabled
       ? await prisma.staffMember.findFirst({
-          where: { id: input.staffId, businessId: stand.businessId, active: true },
+          where: { id: input.staffId, businessId: stand.businessId, active: true, deletedAt: null },
           select: { id: true, name: true, role: true },
         })
       : null;

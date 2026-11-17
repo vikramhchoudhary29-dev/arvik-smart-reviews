@@ -1677,3 +1677,23 @@ dialog::backdrop {
     font-size: 0.78rem;
   }
 }
+.subscription-summary {
+  margin: 24px 0;
+}
+.subscription-picker {
+  max-width: 480px;
+  margin: 24px 0;
+}
+.subscription-term {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #33415c;
+}
+.subscription-term h3 {
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .subscription-term .actions {
+    width: 100%;
+  }
+}

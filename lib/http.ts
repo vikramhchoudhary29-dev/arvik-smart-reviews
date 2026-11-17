@@ -60,6 +60,11 @@ export function route(fn: (r: NextRequest, c: Context) => Promise<Response>, adm
             },
             { status: 503 },
           );
+        if (e.code === 'P2034')
+          return NextResponse.json(
+            { error: 'Another update happened at the same time. Refresh and try again.' },
+            { status: 409 },
+          );
         if (e.code === 'P2003')
           return NextResponse.json(
             { error: 'Related records exist. Deactivate this record to preserve history.' },

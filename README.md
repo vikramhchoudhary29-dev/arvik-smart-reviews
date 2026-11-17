@@ -4,7 +4,7 @@
 
 **v0.4.0 / Task 5:** See [REPORTING_GUIDE.md](REPORTING_GUIDE.md) for the redesigned dashboard, dedicated Reports module, UTC filter semantics, CSV/Excel exports, A4 Print / Save PDF and the index-only upgrade. No additional service credentials are needed.
 
-Arvik Digital's centrally managed, one-time-payment NFC/QR review assistance platform. This extends the supplied Phase 2 project using Next.js 16, React 19, Tailwind 4, Prisma **6.19.3**, PostgreSQL/Neon and Firebase Authentication. No paid AI calls. No subscription or payment gateway is required.
+Arvik Digital's centrally managed NFC/QR review assistance platform with yearly business subscriptions. This extends the supplied Phase 2 project using Next.js 16, React 19, Tailwind 4, Prisma **6.19.3**, PostgreSQL/Neon and Firebase Authentication. No paid AI calls. Yearly subscriptions and manual payments are managed by Super Admin; no payment gateway or auto-debit is used.
 
 **Release status: implemented and locally verified; not certified production-ready.** Live Firebase sign-in, Neon, Vercel, real Google listings and physical phones/tags must still be verified with the intended configuration. See TESTING_RESULTS.md and KNOWN_ISSUES.md.
 
@@ -160,3 +160,35 @@ npm run test:e2e
 Remove-Item Env:PLAYWRIGHT_CHANNEL
 npm run format:check
 ```
+
+## v0.6.0 — staff fixes and yearly subscription management
+
+### Owner staff settings
+
+The customer-question DTO and save payload now contain only `staffEnabled` and `staffQuestion`. Database metadata is not sent back as editable form values. Owners can disable selection, leave the question blank for the category default, or save custom wording, including after an existing settings row has been reloaded. Delete staff removes it from the owner/current customer lists and makes it unselectable; a deletion timestamp and inactive state preserve previous mention/event history. Deleted staff cannot be reactivated through the edit endpoint.
+
+### One place for yearly subscriptions
+
+Super Admin → **Subscriptions** lists businesses, active/expiring/expired/not-configured terms, yearly fee, paid/unpaid/partial balance and renewal history. Businesses also have a **Subscription** shortcut. Add a yearly term with start date and INR annual fee, or choose Renew yearly. Term expiry is inclusive and one calendar year; leap dates are tested. Early renewal starts after the latest term; a lapsed renewal starts today. No automatic backdating or payment confirmation occurs. Dates use UTC calendar days. Edit fee/internal notes and record manual UPI, bank, cash or other payments; overpayments are rejected. Void a mistakenly recorded payment without deleting its history. Renewing creates a new term and never overwrites old records.
+
+Expiry is **warning only**, as requested: the owner sees an expiry warning and a read-only Subscription section. NFC/QR pages remain active unless the Super Admin independently deactivates the business/stand. A business without a configured plan is unchanged. No plan, price, payment or subscription is seeded for existing businesses. Owners cannot change fees, term dates, payments or renewal contacts.
+
+### Renewal WhatsApp contact
+
+Business create/edit has **Renewal WhatsApp number** separate from other contact fields. Indian 10-digit numbers use +91; international numbers include the country code. Subscriptions → WhatsApp reminder opens `wa.me` for that configured number with business name, recorded expiry and annual renewal fee. The Super Admin reviews the message and presses Send in WhatsApp. The application never claims it was delivered, never sends automatically, and does not introduce a WhatsApp API service. No tool messages were sent as part of implementation/testing.
+
+### Upgrade commands
+
+No new environment variable or runtime dependency is required. Review `20261117090000_yearly_subscriptions_staff_removal` in MIGRATIONS.md. It must be applied to the approved database **before** serving the v0.6.0 code, because the updated generated client expects the added columns.
+
+```powershell
+npm ci
+npx prisma generate
+npx prisma migrate status
+# Approved database only; exactly the reviewed migration should be pending:
+npx prisma migrate deploy
+npm run build
+npm run dev
+```
+
+No seed/reset/db-push/cleanup is needed for this upgrade. Existing businesses, stand codes, templates, settings, owner assignments and events are preserved. Refresh the browser after deployment to load the fixed staff form.

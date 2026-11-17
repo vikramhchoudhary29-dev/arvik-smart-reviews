@@ -28,6 +28,12 @@ test('isolated PostgreSQL migrations, owner APIs and public journey', async (t) 
       'utf8',
     ),
   );
+  await db.exec(
+    readFileSync(
+      'prisma/migrations/20261117090000_yearly_subscriptions_staff_removal/migration.sql',
+      'utf8',
+    ),
+  );
   const server = new PGLiteSocketServer({ db, port: 0, host: '127.0.0.1', maxConnections: 8 });
   await server.start();
   process.env.DATABASE_URL =

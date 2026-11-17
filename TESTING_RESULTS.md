@@ -86,3 +86,13 @@ Prisma Client was also generated in the user's actual Downloads project; constru
 - Installed Chrome: Owner and Super Admin login pages return 200/render; anonymous `/owner` redirects to login; owner me/business/analytics/reports/QR and admin owner endpoints reject unauthenticated requests with 401. Existing active stand's public API returns the new payload; actual business-branded light customer UI loads on phone/desktop without overflow or browser exceptions.
 - Real logo image response checked (200 WebP) and screenshot capture waits for image decode. Deployment browser event posts intercepted; no analytics counts were fabricated by verification.
 - New owner/staff tables empty by design. A real owner must be assigned by Super Admin, receive/setup their password, verify email and enable real staff selection. End-to-end production inbox delivery and an actual business-owner sign-in are not claimed verified.
+
+## v0.6.0 verification — 2026-11-17
+
+- `npm test`: 45 passed, 0 failed. New cases cover existing settings DTO/resave off/blank/custom; soft-deleted staff hidden/unselectable and mentions preserved; tenant boundaries; admin-only subscription/payment writes; inclusive annual/leap dates; overlap rejection; integer INR paise; partial/paid/due calculations; overpayment and fee-below-paid rejection; void history; renewal history; no leakage of internal notes/payment references; expired subscription keeps an active stand publicly available.
+- Chrome browser suite: 14 passed. Existing analytics/report/clipboard/Google journey tests still pass. Owner regressions save settings repeatedly after a persisted row, delete staff, and preserve branding. Subscription UI creates an expired yearly term, records a partial payment, displays owner expiry warning, keeps the public API available, renews the term and validates the WhatsApp href without opening/sending it.
+- Production build and TypeScript pass. Isolated Firebase provider mocks remain test-fixture-only; no authentication bypass added to shipped routes. No production plan, payment, staff deletion or message was created to test these features.
+
+### v0.6.0 production migration evidence
+
+User-approved additive migration applied to existing production target after old migration checksums/pending set were verified. Before/after compared every original field in business, stand, template, event, owner, experience, staff and mention rows; all preserved. New subscription/payment tables empty and added fields at defaults. No production payment/plan/staff deletion or WhatsApp delivery test was performed. Live UI authenticated mutations remain verified through isolated browser/API tests rather than altering client records to create proof.

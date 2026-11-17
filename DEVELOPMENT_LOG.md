@@ -80,3 +80,17 @@
 - Before/after comparison verified every original row unchanged: 1 business, 1 stand, 99 templates and 24 analytics events. New tables start empty; no test owner/staff/client records, seed, cleanup, backfill or fake review events were inserted.
 - Live Chrome smoke checks passed: both login screens, anonymous owner redirect, protected API 401 responses, existing active stand lookup, business-branded mobile/desktop rendering and no browser exceptions/overflow. Production PAGE_VIEW/event requests were intercepted during browser smoke tests to avoid contaminating analytics. No generation/copy/Google-click event was submitted in production.
 - Onboarding remains an operational step: Super Admin assigns a real owner under Business Owners; privately delivers a setup link if needed; owner verifies email and adds real staff/enables the question. No live password reset or verification email was sent during deployment verification.
+
+## 2026-11-17 — v0.6.0 implementation
+
+- Reproduced staff-settings resave error from metadata entering strict schema; fixed response DTO and explicit form/save allowlist. Added regression for existing saved settings, disabled selection, blank defaults and custom question.
+- Added history-preserving staff Delete endpoint/action and scoped deleted-row exclusions.
+- Added yearly Subscription workspace/admin APIs, appended term history, manual payment/void ledger, balance/status calculations and owner read-only status/expiry warning. Public page policy explicitly warning-only per user choice.
+- Added Renewal WhatsApp field to business create/edit, Business→Subscription shortcut and manual WhatsApp reminder composer. No message is sent automatically or marked delivered.
+- Added/reviewed additive migration and isolated tests. 45 unit/integration checks and 14 browser tests passed; production build passed. No live schema/records were changed during these implementation checks.
+
+### Approved migration execution — 2026-11-17
+
+- Compared the existing Firebase project/Neon target and all four historical migration checksums; confirmed exactly the v0.6.0 migration pending.
+- Created a local gitignored preservation backup of business/stand/template/event/owner/config/staff/mention rows; applied only the approved migration.
+- Verified all original field values unchanged: 1 / 1 / 99 / 49 / 1 / 1 / 1 / 3 rows respectively. Added column defaults correct; subscription/payment tables empty. No live message, payment, plan or staff deletion was made during verification.

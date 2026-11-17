@@ -32,6 +32,7 @@ model Business {
   contactName     String             @default("")
   phone           String             @default("")
   whatsapp        String             @default("")
+  renewalWhatsapp String             @default("")
   email           String             @default("")
   address         String             @default("")
   city            String             @default("")
@@ -58,6 +59,7 @@ model Business {
   owners          BusinessOwner[]
   staff           StaffMember[]
   experience      BusinessExperience?
+  subscriptions   SubscriptionPeriod[]
 }
 
 model Stand {
@@ -213,11 +215,44 @@ model StaffMember {
   name       String
   role       String   @default("")
   active     Boolean  @default(true)
+  deletedAt  DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   mentions   StaffMention[]
 
   @@index([businessId, active])
+}
+
+model SubscriptionPeriod {
+  id             String   @id @default(cuid())
+  businessId     String
+  business       Business @relation(fields: [businessId], references: [id])
+  startsOn       DateTime @db.Date
+  expiresOn      DateTime @db.Date
+  annualFeePaise Int
+  currency       String   @default("INR")
+  notes          String   @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  payments       SubscriptionPayment[]
+
+  @@unique([businessId, startsOn])
+  @@index([businessId, expiresOn])
+  @@index([expiresOn])
+}
+
+model SubscriptionPayment {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  subscription   SubscriptionPeriod @relation(fields: [subscriptionId], references: [id])
+  amountPaise    Int
+  paidOn         DateTime @db.Date
+  method         String
+  reference      String   @default("")
+  createdAt      DateTime @default(now())
+  voidedAt       DateTime?
+
+  @@index([subscriptionId, voidedAt])
 }
 
 // Each successful generation request can mention at most one selected staff member.

@@ -30,6 +30,19 @@ export const businessSchema = z
     contactName: text.default(''),
     phone: text.default(''),
     whatsapp: text.default(''),
+    renewalWhatsapp: z
+      .string()
+      .trim()
+      .max(25)
+      .refine(
+        (v) =>
+          !v ||
+          (/^[+\d ()-]+$/.test(v) &&
+            v.replace(/\D/g, '').length >= 10 &&
+            v.replace(/\D/g, '').length <= 15),
+        'Use a WhatsApp number with country code',
+      )
+      .default(''),
     email: z.union([z.literal(''), z.email()]).default(''),
     address: text.default(''),
     city: text.default(''),

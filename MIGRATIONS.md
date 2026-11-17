@@ -72,3 +72,17 @@ Code is backward compatible with the previous schema for existing public review 
 ### Production activation — 2026-11-16
 
 The user approved and the task applied `20261116090000_business_owner_experience` to the existing production Neon database. All four migrations are complete. Existing business, stand/code, template and event rows were compared before/after and are unchanged. Do not re-run initialisation SQL or seed for this upgrade. The four new tables start empty; assign a real owner through the Super Admin UI to begin onboarding.
+
+## v0.6.0 migration — yearly subscriptions and staff deletion
+
+Review `prisma/migrations/20261117090000_yearly_subscriptions_staff_removal/migration.sql`.
+
+- Adds `Business.renewalWhatsapp` (empty string default) and nullable `StaffMember.deletedAt` (null for all existing staff).
+- Adds `SubscriptionPeriod` and `SubscriptionPayment`, with indexes, date/amount checks and restrictive foreign keys. New tables start empty. No price, plan, expiry, payment, removal, change to existing settings, template or historical analytics is backfilled.
+- Approved rollout order: preservation backup/check existing migration checksums → confirm exactly this migration pending → `npx prisma migrate deploy` → verify original records/stand codes remain unchanged → deploy the updated code. No `db push`, reset, seed, cleanup or manual UPDATE/DELETE is part of the upgrade.
+- This version expects new columns on Business/StaffMember; migrate **before** activating the new code. Older v0.5.0 code tolerates the additive columns/tables while the new deployment builds. Rollback application code without dropping the new tables or erasing subscription/payment history.
+- Staff Delete is a user-triggered soft removal, not a migration action. Expiry warnings are computed from dates; no background job deactivates businesses/stands.
+
+### v0.6.0 approved live migration — 2026-11-17
+
+User approved and migration `20261117090000_yearly_subscriptions_staff_removal` was applied before code rollout. All five migrations completed. Verified every original field value preserved across 1 business, 1 stand, 99 templates, 49 events, 1 owner assignment, 1 experience config, 1 staff record and 3 mentions. New period/payment tables remain empty; added renewal contact is blank and deletedAt null. No price/payment/plan/contact/removal was backfilled. Do not rerun initialization/seed or delete migration records.

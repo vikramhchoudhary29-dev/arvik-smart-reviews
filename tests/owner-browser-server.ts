@@ -58,6 +58,7 @@ async function main() {
         name,
         slug: id,
         category: 'restaurant',
+        renewalWhatsapp: '9999999999',
         googleReviewUrl: 'https://g.page/r/' + id + '/review',
         status: 'ACTIVE',
         linkTestedAt: new Date(),
@@ -83,6 +84,11 @@ async function main() {
     data: { firebaseUid: 'browser-owner', email: 'owner@example.test', businessId: 'a' },
   });
   const handlers: Record<string, Record<string, Function>> = {
+    '/api/admin/subscriptions': await import('../app/api/admin/subscriptions/route'),
+    '/api/admin/subscriptions/payments':
+      await import('../app/api/admin/subscriptions/payments/route'),
+    '/api/owner/subscription': await import('../app/api/owner/subscription/route'),
+    '/api/public/stand/permanent-a': await import('../app/api/public/stand/[code]/route'),
     '/api/owner/me': await import('../app/api/owner/me/route'),
     '/api/owner/business': await import('../app/api/owner/business/route'),
     '/api/owner/staff': await import('../app/api/owner/staff/route'),
@@ -157,7 +163,9 @@ async function main() {
           headers: req.headers as HeadersInit,
           ...(body.length ? { body } : {}),
         });
-        const response: Response = await handler(r, { params: Promise.resolve({ id: 'sa' }) });
+        const response: Response = await handler(r, {
+          params: Promise.resolve({ id: 'sa', code: 'permanent-a' }),
+        });
         res.statusCode = response.status;
         response.headers.forEach((v, k) => res.setHeader(k, v));
         res.end(Buffer.from(await response.arrayBuffer()));

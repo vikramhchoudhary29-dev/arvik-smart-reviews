@@ -35,3 +35,10 @@ The reported missing-generated-client/JSON-parser failures are corrected. Existi
 - Staff-generation counts do not prove published reviews or staff service quality. Renamed staff display under their current display name; historical counts keep their staff ID. Deactivation preserves history.
 - New features require the additive migration. Existing public pages have a tested schema-pending fallback; this is not a substitute for activating the new tables.
 - Existing physical NFC writing/printed QR and real-device Google/Safari behavior still require physical checks. No guaranteed star ratings, review gating or automated review posting was added.
+
+## v0.6.0 boundaries
+
+- Yearly subscription and payment tracking is manual; it does not collect payments, auto-debit, produce tax invoices, automatically remind customers or verify payment references. Invalid payment entries can be voided with an audit trail; no refund is initiated.
+- WhatsApp reminder links open a prepared chat; delivery/read/sent status is not tracked or claimed. Use the dedicated renewal number and manually review/send the message.
+- Expiry never disables NFC/QR public pages under the selected warning-only policy. New tables start empty; Super Admin must enter the actual agreed annual fee and real payment records.
+- Removed staff are hidden/unselectable but retained internally to preserve historical mentions; Delete is not permanent erasure. Subscription dates are annual immutable term boundaries; edit fee/notes or append a renewal term.

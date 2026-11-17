@@ -58,6 +58,7 @@ export function Shell({ section, children }: { section: string; children: React.
             ['Analytics', 'analytics'],
             ['Reports', 'reports'],
             ['Business Owners', 'owners'],
+            ['Subscriptions', 'subscriptions'],
             ['Settings', 'settings'],
           ].map(([name, key]) => (
             <Link
@@ -94,6 +95,7 @@ const businessFields = [
   'contactName',
   'phone',
   'whatsapp',
+  'renewalWhatsapp',
   'email',
   'address',
   'city',
@@ -107,7 +109,10 @@ const businessFields = [
   'brandColor',
   'status',
 ];
-const label = (s: string) => s.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+const label = (s: string) =>
+  s === 'renewalWhatsapp'
+    ? 'Renewal WhatsApp number (India 10 digits or country code)'
+    : s.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 export function Manager({ kind }: { kind: 'businesses' | 'stands' | 'templates' }) {
   const [rows, setRows] = useState<Row[]>([]),
     [businesses, setBusinesses] = useState<Row[]>([]),
@@ -571,6 +576,11 @@ export function Manager({ kind }: { kind: 'businesses' | 'stands' | 'templates' 
                     {kind === 'businesses' && (
                       <Link className="button" href={'/admin/stands?businessId=' + row.id}>
                         Assigned stands
+                      </Link>
+                    )}
+                    {kind === 'businesses' && (
+                      <Link className="button" href={'/admin/subscriptions?businessId=' + row.id}>
+                        Subscription
                       </Link>
                     )}
                     {kind !== 'templates' && (
