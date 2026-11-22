@@ -117,3 +117,9 @@ npm run dev
 ```
 
 Do not run migration commands against the live database until approved. Seeding is optional for a fresh development database (npm run seed); no live seed is required because existing General templates supply fallback wording.
+
+### v0.7.0 live completion (approved 2026-11-22)
+
+Migration 20261122090000_business_outlets is applied. Fresh-connection verification against the recovered encrypted backup passed: Business 1, Stand 1, ReviewPhrase 99, AnalyticsEvent 62, BusinessOwner 1, BusinessExperience 1, StaffMember 1 and StaffMention 4 preserved. Existing billing/loyalty/customer tables were also checked (empty at snapshot). Stand lastActivity/updatedAt are excluded from immutable-field fingerprints because customer traffic can legitimately update them. No outlets or assignments were fabricated or seeded; historical outlet IDs remain null.
+
+Live smoke checks passed: both login pages, anonymous API rejection including admin/owner outlet APIs, owner login redirect, existing public stand with new outlet payload, mobile/desktop branding, no browser exceptions or mobile overflow. Smoke event POSTs were intercepted to avoid fake production analytics. Authenticated mutations were verified in isolated tests, not by impersonating live users. Actual account onboarding and physical NFC hardware remain customer acceptance checks. Normal build restored; future migrations still require separate approval.
