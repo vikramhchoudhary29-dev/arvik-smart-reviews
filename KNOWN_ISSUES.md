@@ -45,4 +45,4 @@ The reported missing-generated-client/JSON-parser failures are corrected. Existi
 
 ## v0.7.0 outlets
 
-Live migration/deployment await approval. Each staff member has one outlet or General assignment; customers select one outlet per review draft. Business-wide staff toggle/custom question applies across outlets. Deactivation replaces outlet deletion to preserve historical event attribution. Historical events remain unassigned. Outlet table has four UTC presets; custom date/export remains in the existing overall Reports module, not in the outlet table. A click is not a confirmed published review.
+The live migration was explicitly approved. Each staff member has one outlet or General assignment; customers select one outlet per review draft. Business-wide staff toggle/custom question applies across outlets. Deactivation replaces outlet deletion to preserve historical event attribution. Historical events remain unassigned. Outlet table has four UTC presets; custom date/export remains in the existing overall Reports module, not in the outlet table. A click is not a confirmed published review.
