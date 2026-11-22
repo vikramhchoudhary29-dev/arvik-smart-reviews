@@ -52,14 +52,14 @@ async function main() {
       .filter((m) => m !== 'migration_lock.toml')
       .sort();
     for (const h of history.filter((h) => h.finished_at && !h.rolled_back_at)) {
-      if (
-        !local.includes(h.migration_name) ||
-        crypto
-          .createHash('sha256')
-          .update(fs.readFileSync(`prisma/migrations/${h.migration_name}/migration.sql`))
-          .digest('hex') !== h.checksum
-      )
-        throw Error('Migration history mismatch');
+      if (!local.includes(h.migration_name)) throw Error('Unknown applied migration');
+      const sql = fs.readFileSync(`prisma/migrations/${h.migration_name}/migration.sql`, 'utf8');
+      const lf = sql.replace(/\r\n/g, '\n');
+      const hashes = [sql, lf, lf.replace(/\n/g, '\r\n')].map((text) =>
+        crypto.createHash('sha256').update(text).digest('hex'),
+      );
+      if (!hashes.includes(h.checksum))
+        throw Error('Migration history mismatch: ' + h.migration_name);
     }
     const pending = local.filter(
       (m) => !history.some((h) => h.migration_name === m && h.finished_at && !h.rolled_back_at),
