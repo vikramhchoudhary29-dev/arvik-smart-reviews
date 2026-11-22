@@ -537,6 +537,201 @@ test('owner tenant isolation, staff, branding, invitations and historical preser
       },
     );
     await t.test(
+      'outlets isolate tenants, scope staff and retain one Google destination with deduplicated events',
+      async () => {
+        const ownerOutlets = await import('../app/api/owner/outlets/route');
+        const adminOutlets = await import('../app/api/admin/outlets/route');
+        const events = await import('../app/api/public/stand/[code]/event/route');
+        assert.equal(
+          (await ownerOutlets.GET(req('/?businessId=a', 'GET', undefined, ''), ctx())).status,
+          401,
+        );
+        assert.equal((await adminOutlets.GET(req('/?businessId=a'), ctx())).status, 401);
+        assert.equal((await ownerOutlets.GET(req('/?businessId=b'), ctx())).status, 403);
+        assert.equal(
+          (
+            await ownerOutlets.POST(
+              req('/?businessId=a', 'POST', {
+                action: 'save',
+                values: { name: 'Coffee Counter', category: 'cafe', active: true },
+              }),
+              ctx(),
+            )
+          ).status,
+          200,
+        );
+        const outlet = await prisma.outlet.findFirstOrThrow({ where: { businessId: 'a' } });
+        const foreign = await prisma.outlet.create({
+          data: { businessId: 'b', name: 'Private Bar', category: 'bar' },
+        });
+        assert.equal(
+          (
+            await ownerOutlets.POST(
+              req('/?businessId=a', 'POST', {
+                action: 'save',
+                id: foreign.id,
+                values: { name: 'Attack', category: 'bar', active: true },
+              }),
+              ctx(),
+            )
+          ).status,
+          403,
+        );
+        const member = await prisma.staffMember.create({
+          data: { businessId: 'a', name: 'Cafe Staff', outletId: outlet.id },
+        });
+        await prisma.businessExperience.upsert({
+          where: { businessId: 'a' },
+          create: { businessId: 'a', staffEnabled: true },
+          update: { staffEnabled: true },
+        });
+        assert.equal(
+          (
+            await ownerOutlets.POST(
+              req('/?businessId=a', 'POST', {
+                action: 'stand',
+                standId: 'sa',
+                outletId: foreign.id,
+              }),
+              ctx(),
+            )
+          ).status,
+          403,
+        );
+        assert.equal(
+          (
+            await ownerOutlets.POST(
+              req('/?businessId=a', 'POST', {
+                action: 'stand',
+                standId: 'sa',
+                outletId: outlet.id,
+              }),
+              ctx(),
+            )
+          ).status,
+          200,
+        );
+        assert.equal(
+          (
+            await ownerOutlets.POST(
+              req('/?businessId=a', 'POST', {
+                action: 'staff',
+                staffId: member.id,
+                outletId: foreign.id,
+              }),
+              ctx(),
+            )
+          ).status,
+          403,
+        );
+        const publicData = await (await lookup.GET(req('/'), ctx({ code: 'permanent-a' }))).json();
+        assert.equal(publicData.defaultOutletId, outlet.id);
+        assert.equal(publicData.googleReviewUrl, 'https://g.page/r/a/review');
+        assert.equal(publicData.outlets[0].staff[0].name, 'Cafe Staff');
+        assert.ok(publicData.outlets[0].aspects.includes('Coffee'));
+        assert.ok(!JSON.stringify(publicData).includes('Private Bar'));
+        await prisma.reviewPhrase.create({
+          data: {
+            category: 'general',
+            tag: '*',
+            sentiment: 'neutral',
+            text: 'My experience with {aspect} was mixed.',
+          },
+        });
+        const eventId = randomUUID();
+        const body = {
+          outletId: outlet.id,
+          staffId: member.id,
+          aspects: ['Coffee'],
+          sentiment: 'neutral',
+          notes: '',
+          variation: 0,
+          eventId,
+        };
+        for (let i = 0; i < 2; i++) {
+          const response = await suggestions.POST(
+            req('/', 'POST', body),
+            ctx({ code: 'permanent-a' }),
+          );
+          assert.equal(response.status, 200);
+          assert.ok(
+            (await response.json()).suggestions.every(
+              (d: string) => d.includes('Coffee Counter') && d.includes('Cafe Staff'),
+            ),
+          );
+        }
+        assert.equal(
+          await prisma.analyticsEvent.count({
+            where: { outletId: outlet.id, type: 'SUGGESTION_GENERATE' },
+          }),
+          1,
+        );
+        assert.equal(
+          (
+            await suggestions.POST(
+              req('/', 'POST', { ...body, outletId: foreign.id }),
+              ctx({ code: 'permanent-a' }),
+            )
+          ).status,
+          400,
+        );
+        assert.equal(
+          (
+            await suggestions.POST(
+              req('/', 'POST', { ...body, outletId: undefined }),
+              ctx({ code: 'permanent-a' }),
+            )
+          ).status,
+          400,
+        );
+        const clickId = randomUUID();
+        for (let i = 0; i < 2; i++)
+          assert.equal(
+            (
+              await events.POST(
+                req('/', 'POST', {
+                  type: 'GOOGLE_LINK_CLICK',
+                  eventId: clickId,
+                  outletId: outlet.id,
+                }),
+                ctx({ code: 'permanent-a' }),
+              )
+            ).status,
+            200,
+          );
+        const summary = await (
+          await ownerOutlets.GET(req('/?businessId=a&preset=today'), ctx())
+        ).json();
+        assert.equal(
+          summary.activity.find(
+            (a: any) => a.outletId === outlet.id && a.type === 'GOOGLE_LINK_CLICK',
+          )._count,
+          1,
+        );
+        await prisma.outlet.update({ where: { id: outlet.id }, data: { active: false } });
+        const hidden = await (await lookup.GET(req('/'), ctx({ code: 'permanent-a' }))).json();
+        assert.equal(hidden.outlets.length, 0);
+        assert.equal(hidden.defaultOutletId, null);
+        assert.equal(
+          (
+            await events.POST(
+              req('/', 'POST', {
+                type: 'COPY_SUGGESTION',
+                eventId: randomUUID(),
+                outletId: outlet.id,
+              }),
+              ctx({ code: 'permanent-a' }),
+            )
+          ).status,
+          400,
+        );
+        assert.equal(
+          (await prisma.stand.findUniqueOrThrow({ where: { id: 'sa' } })).code,
+          'permanent-a',
+        );
+      },
+    );
+    await t.test(
       'assignment grants, private setup link, audit and immediate revocation',
       async () => {
         assert.equal(

@@ -39,26 +39,32 @@ export const experiencePrompt = (category: string) =>
     education: 'How was your learning experience?',
   })[category] || 'How was your experience?';
 
-export async function publicExperience(businessId: string, category: string) {
-  // Backward-compatible while the additive migration awaits explicit database approval.
+// Load staff/config once per lookup, rather than repeating database queries per outlet.
+export async function publicExperience(businessId: string) {
   try {
     const config = await prisma.businessExperience.findUnique({ where: { businessId } });
     const staff = config?.staffEnabled
       ? await prisma.staffMember.findMany({
           where: { businessId, active: true, deletedAt: null },
-          select: { id: true, name: true, role: true },
+          select: { id: true, name: true, role: true, outletId: true },
           orderBy: { name: 'asc' },
           take: 100,
         })
       : [];
-    return {
+    return (category: string, outletId: string | null = null) => ({
       staffEnabled: config?.staffEnabled || false,
       staffQuestion: config?.staffQuestion || staffQuestion(category),
-      staff,
-    };
+      staff: staff
+        .filter((s) => s.outletId === outletId)
+        .map(({ id, name, role }) => ({ id, name, role })),
+    });
   } catch (e) {
     if (!(e instanceof Prisma.PrismaClientKnownRequestError) || e.code !== 'P2021') throw e;
-    return { staffEnabled: false, staffQuestion: staffQuestion(category), staff: [] };
+    return (category: string, _outletId: string | null = null) => ({
+      staffEnabled: false,
+      staffQuestion: staffQuestion(category),
+      staff: [],
+    });
   }
 }
 

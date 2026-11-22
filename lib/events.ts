@@ -5,12 +5,13 @@ export async function recordEvent(
   type: EventType,
   eventId: string,
   staffId?: string,
+  outletId?: string,
 ) {
   const dedupKey = stand.id + ':' + type + ':' + eventId;
   await prisma.$transaction(async (tx) => {
     const event = await tx.analyticsEvent.upsert({
       where: { dedupKey },
-      create: { dedupKey, standId: stand.id, businessId: stand.businessId, type },
+      create: { dedupKey, standId: stand.id, businessId: stand.businessId, type, outletId },
       update: {},
     });
     if (staffId)

@@ -12,6 +12,7 @@ async function main() {
     '20261112170000_analytics_time_index',
     '20261116090000_business_owner_experience',
     '20261117090000_yearly_subscriptions_staff_removal',
+    '20261122090000_business_outlets',
   ])
     await db.exec(readFileSync('prisma/migrations/' + m + '/migration.sql', 'utf8'));
   const server = new PGLiteSocketServer({ db, port: 0, maxConnections: 8 });
@@ -42,6 +43,17 @@ async function main() {
   });
   await prisma.staffMember.create({
     data: { businessId: 'browser-business', name: 'Priya', role: 'Advisor' },
+  });
+  await prisma.outlet.create({
+    data: {
+      id: 'browser-cafe',
+      businessId: 'browser-business',
+      name: 'Hotel Cafe',
+      category: 'cafe',
+    },
+  });
+  await prisma.staffMember.create({
+    data: { businessId: 'browser-business', name: 'Cafe Host', outletId: 'browser-cafe' },
   });
   await seed(prisma);
   await prisma.$disconnect();

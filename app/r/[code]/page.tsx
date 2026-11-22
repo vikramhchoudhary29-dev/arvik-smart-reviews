@@ -4,7 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { googleReviewUrl } from '@/lib/validation';
 import { copyAndContinue } from '@/lib/copy-continue';
+type Outlet = {
+  id: string;
+  name: string;
+  category: string;
+  aspects: string[];
+  experiencePrompt: string;
+  staffEnabled: boolean;
+  staffQuestion: string;
+  staff: { id: string; name: string; role: string }[];
+};
 type Data = {
+  outlets?: Outlet[];
+  defaultOutletId?: string | null;
   businessName: string;
   location: string;
   experiencePrompt: string;
@@ -27,6 +39,7 @@ export default function ReviewPage() {
     [aspects, setAspects] = useState<string[]>([]),
     [sentiment, setSentiment] = useState('neutral'),
     [notes, setNotes] = useState(''),
+    [outletId, setOutletId] = useState(''),
     [staffId, setStaffId] = useState(''),
     [suggestions, setSuggestions] = useState<string[]>([]),
     [draft, setDraft] = useState(''),
@@ -36,11 +49,15 @@ export default function ReviewPage() {
   const variation = useRef(0),
     visit = useRef(''),
     textarea = useRef<HTMLTextAreaElement>(null);
-  const event = (type: string, id = crypto.randomUUID()) => {
+  const event = (type: string, id = crypto.randomUUID(), selectedOutlet = outletId) => {
     void fetch('/api/public/stand/' + encodeURIComponent(code) + '/event', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, eventId: id }),
+      body: JSON.stringify({
+        type,
+        eventId: id,
+        ...(selectedOutlet ? { outletId: selectedOutlet } : {}),
+      }),
       keepalive: true,
     }).catch(() => {});
   };
@@ -51,9 +68,10 @@ export default function ReviewPage() {
         const j = await readApiResponse<Data>(r, 'public');
         if (!cancelled) {
           setData(j);
+          setOutletId(j.defaultOutletId || '');
           if (!visit.current) {
             visit.current = crypto.randomUUID();
-            event('PAGE_VIEW', visit.current);
+            event('PAGE_VIEW', visit.current, j.defaultOutletId || '');
           }
         }
       })
@@ -71,6 +89,7 @@ export default function ReviewPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           aspects,
+          ...(outletId ? { outletId } : {}),
           ...(staffId ? { staffId } : {}),
           sentiment,
           notes,
@@ -114,6 +133,7 @@ export default function ReviewPage() {
       setBusy(false);
     }
   }
+  const experience = data?.outlets?.find((o) => o.id === outletId) || data;
   const brand = data?.brandColor || '#059669';
   const rgb = [1, 3, 5]
     .map((i) => parseInt(brand.slice(i, i + 2), 16) / 255)
@@ -174,6 +194,38 @@ export default function ReviewPage() {
                 welcome.
               </p>
             </header>
+            {!!data.outlets?.length && (
+              <section className="customer-card">
+                <label>
+                  Which outlet did you visit?
+                  <select
+                    value={outletId}
+                    disabled={busy}
+                    onChange={(e) => {
+                      setOutletId(e.target.value);
+                      setAspects([]);
+                      setStaffId('');
+                      setSuggestions([]);
+                      setDraft('');
+                      variation.current = 0;
+                      setError('');
+                      setStatus('Outlet changed. Select the experiences you had.');
+                    }}
+                  >
+                    <option value="">General hotel / business experience</option>
+                    {data.outlets.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="customer-hint">
+                  All outlets share this business’s Google Review page. Changing outlet clears
+                  generated drafts.
+                </p>
+              </section>
+            )}
             <ol className="customer-progress" aria-label="Your feedback journey">
               <li>
                 <span>1</span>Your experience
@@ -187,7 +239,9 @@ export default function ReviewPage() {
             </ol>
             <section className="customer-card" aria-label="Experience details">
               <p className="customer-step">STEP 01</p>
-              <h2 id="experience-heading">{data.experiencePrompt || 'How was your experience?'}</h2>
+              <h2 id="experience-heading">
+                {experience!.experiencePrompt || 'How was your experience?'}
+              </h2>
               <label>
                 How was your experience?
                 <select value={sentiment} onChange={(e) => setSentiment(e.target.value)}>
@@ -199,7 +253,7 @@ export default function ReviewPage() {
               <fieldset>
                 <legend>What would you like to describe?</legend>
                 <div className="chips">
-                  {data.aspects.map((a) => (
+                  {experience!.aspects.map((a) => (
                     <button
                       type="button"
                       key={a}
@@ -217,9 +271,9 @@ export default function ReviewPage() {
             <section className="customer-card" aria-labelledby="personal-heading">
               <p className="customer-step">STEP 02</p>
               <h2 id="personal-heading">Make it personal.</h2>
-              {data.staffEnabled && data.staff?.length > 0 && (
+              {experience!.staffEnabled && experience!.staff?.length > 0 && (
                 <label>
-                  {data.staffQuestion} (optional)
+                  {experience!.staffQuestion} (optional)
                   <select
                     value={staffId}
                     onChange={(e) => {
@@ -231,7 +285,7 @@ export default function ReviewPage() {
                     }}
                   >
                     <option value="">Skip / not sure</option>
-                    {data.staff.map((member) => (
+                    {experience!.staff.map((member) => (
                       <option key={member.id} value={member.id}>
                         {member.name}
                         {member.role ? ' · ' + member.role : ''}

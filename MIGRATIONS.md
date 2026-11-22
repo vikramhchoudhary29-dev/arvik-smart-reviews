@@ -86,3 +86,34 @@ Review `prisma/migrations/20261117090000_yearly_subscriptions_staff_removal/migr
 ### v0.6.0 approved live migration — 2026-11-17
 
 User approved and migration `20261117090000_yearly_subscriptions_staff_removal` was applied before code rollout. All five migrations completed. Verified every original field value preserved across 1 business, 1 stand, 99 templates, 49 events, 1 owner assignment, 1 experience config, 1 staff record and 3 mentions. New period/payment tables remain empty; added renewal contact is blank and deletedAt null. No price/payment/plan/contact/removal was backfilled. Do not rerun initialization/seed or delete migration records.
+
+## v0.7.0 — Business outlets (2026-11-22)
+
+Implemented locally; live database migration and deployment await explicit approval for this update.
+
+- Super Admin: Outlets navigation, select business, create/edit/deactivate outlets, assign staff and stand defaults. Owner: Outlets in the assigned business workspace with the same scoped management.
+- Customer chooses one outlet or General. All outlets use the existing business Google Review URL; no separate listing or link is created. Existing stand codes and QR URLs stay unchanged. A stand can preselect an active outlet, and the customer can change it.
+- Outlet category controls experience options (including Cafe, Bar and Thali); only that outlet's active, undeleted staff are shown when business staff selection is enabled. General staff appear under General. Each staff member currently has one outlet assignment.
+- Drafts identify the selected outlet and only use customer-supplied experience and sentiment. Category-specific recorded templates are preferred; Cafe/Bar/Thali fall back to existing active General templates when none exist. No fabricated positive claims. Changing outlet clears generated drafts, selected aspects and staff; the customer's own notes remain.
+- Outlet activity table supports Today / Last 7 / Last 30 / This Month in UTC. Counts include generations (with regenerations), copies, outbound Google clicks and attributable page visits. Historical events and visits before outlet selection remain General; these are event counts, not unique customers or published reviews. Existing reports retain their overall totals. Outlet CSV/XLSX exports and multiple staff outlet assignments are not included in this release.
+- No automatic migration, seeding, external messages or deployment occurred. No new dependencies or environment settings.
+
+### Migration order
+
+Back up the intended database. Review prisma/migrations/20261122090000_business_outlets/migration.sql. It creates Outlet and adds nullable outletId to Stand, StaffMember and AnalyticsEvent, with foreign keys and indexes. It does not update/delete existing rows or backfill historical outlet attribution. Apply migration before running the new application.
+
+PowerShell in the extracted project, with development .env configured:
+
+```powershell
+npm ci
+npx prisma validate
+npx prisma generate
+npx prisma migrate status
+npx prisma migrate deploy
+npm run typecheck
+npm test
+npm run build
+npm run dev
+```
+
+Do not run migration commands against the live database until approved. Seeding is optional for a fresh development database (npm run seed); no live seed is required because existing General templates supply fallback wording.

@@ -21,12 +21,24 @@ export const POST = route(async (r, c) => {
       notes: z.string().max(1500),
       variation: z.number().int().min(0).max(100000),
       eventId: z.uuid(),
+      outletId: z.string().max(100).optional(),
       staffId: z.string().max(100).optional(),
     })
     .strict()
     .parse(await r.json());
   const stand = await activeStand(code);
   if (!stand) return unavailable();
+  const outlet = input.outletId
+    ? await prisma.outlet.findFirst({
+        where: { id: input.outletId, businessId: stand.businessId, active: true },
+      })
+    : null;
+  if (input.outletId && !outlet)
+    return NextResponse.json(
+      { error: 'Outlet unavailable. Please select again.' },
+      { status: 400 },
+    );
+  const category = outlet?.category || stand.business.category;
   let staff = null;
   if (input.staffId) {
     const config = await prisma.businessExperience.findUnique({
@@ -34,7 +46,13 @@ export const POST = route(async (r, c) => {
     });
     staff = config?.staffEnabled
       ? await prisma.staffMember.findFirst({
-          where: { id: input.staffId, businessId: stand.businessId, active: true, deletedAt: null },
+          where: {
+            id: input.staffId,
+            businessId: stand.businessId,
+            active: true,
+            deletedAt: null,
+            outletId: outlet?.id || null,
+          },
           select: { id: true, name: true, role: true },
         })
       : null;
@@ -44,15 +62,19 @@ export const POST = route(async (r, c) => {
         { status: 400 },
       );
   }
-  if (
-    input.aspects.some(
-      (a) => !(categories[stand.business.category] || categories.general).includes(a),
-    )
-  )
+  if (input.aspects.some((a) => !(categories[category] || categories.general).includes(a)))
     return NextResponse.json({ error: 'Invalid aspect' }, { status: 400 });
-  const phrases = await prisma.reviewPhrase.findMany({
-    where: { active: true, category: stand.business.category, sentiment: input.sentiment },
+  let phrases = await prisma.reviewPhrase.findMany({
+    where: {
+      active: true,
+      category,
+      sentiment: input.sentiment,
+    },
   });
+  if (!phrases.length && ['cafe', 'bar', 'thali'].includes(category))
+    phrases = await prisma.reviewPhrase.findMany({
+      where: { active: true, category: 'general', sentiment: input.sentiment },
+    });
   let suggestions;
   try {
     suggestions = reviewSuggestions(
@@ -66,11 +88,13 @@ export const POST = route(async (r, c) => {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 });
   }
   suggestions = mentionStaff(suggestions, staff);
+  if (outlet) suggestions = suggestions.map((draft) => `At ${outlet.name}: ${draft}`);
   await recordEvent(
     stand,
     input.variation ? 'SUGGESTION_REGENERATE' : 'SUGGESTION_GENERATE',
     input.eventId,
     staff?.id,
+    outlet?.id,
   );
   return NextResponse.json({ suggestions });
 });

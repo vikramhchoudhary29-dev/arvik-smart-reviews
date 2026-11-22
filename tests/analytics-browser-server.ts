@@ -12,6 +12,7 @@ async function main() {
     '20261112170000_analytics_time_index',
     '20261116090000_business_owner_experience',
     '20261117090000_yearly_subscriptions_staff_removal',
+    '20261122090000_business_outlets',
   ])
     await db.exec(readFileSync('prisma/migrations/' + m + '/migration.sql', 'utf8'));
   const socket = new PGLiteSocketServer({ db, port: 0, maxConnections: 2 });

@@ -91,6 +91,8 @@ async function main() {
     '/api/public/stand/permanent-a': await import('../app/api/public/stand/[code]/route'),
     '/api/owner/me': await import('../app/api/owner/me/route'),
     '/api/owner/business': await import('../app/api/owner/business/route'),
+    '/api/owner/outlets': await import('../app/api/owner/outlets/route'),
+    '/api/admin/outlets': await import('../app/api/admin/outlets/route'),
     '/api/owner/staff': await import('../app/api/owner/staff/route'),
     '/api/owner/analytics': await import('../app/api/owner/analytics/route'),
     '/api/owner/reports': await import('../app/api/owner/reports/route'),

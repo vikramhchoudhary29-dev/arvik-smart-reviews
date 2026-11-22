@@ -1,5 +1,30 @@
 import { test, expect } from '@playwright/test';
 const owner = 'http://localhost:4319';
+test('owner creates outlet and sets existing stand default without changing its QR code', async ({
+  page,
+}) => {
+  await page.goto(owner + '/owner');
+  await page.getByRole('button', { name: 'Outlets', exact: true }).click();
+  await page.getByLabel('Outlet name').fill('Thali Counter');
+  await page.getByRole('combobox', { name: 'Category', exact: true }).selectOption('thali');
+  await page.getByRole('button', { name: 'Save outlet' }).click();
+  await expect(page.getByRole('cell', { name: 'Thali Counter', exact: true })).toBeVisible();
+  const stand = page.getByRole('combobox', { name: 'Main counter', exact: true });
+  await stand.selectOption({ label: 'Thali Counter' });
+  await expect(stand).toBeEnabled();
+  await page.reload();
+  await page.getByRole('button', { name: 'Outlets', exact: true }).click();
+  await expect(
+    page.getByRole('combobox', { name: 'Main counter', exact: true }).locator('option:checked'),
+  ).toHaveText('Thali Counter');
+  await page.screenshot({ path: 'test-results/outlet-management-mobile.png', fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.goto(owner + '/admin/outlets');
+  await page.getByRole('combobox', { name: 'Business', exact: true }).selectOption('a');
+  await expect(page.getByRole('cell', { name: 'Thali Counter', exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({ path: 'test-results/outlet-management-desktop.png', fullPage: true });
+});
 test('owner overview, tenant-only reports and stand QR download', async ({ page }) => {
   await page.goto(owner + '/owner');
   await expect(page.getByRole('heading', { name: 'Your business, at a glance.' })).toBeVisible();

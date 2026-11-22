@@ -8,7 +8,14 @@ export const PATCH = route(async (r, c) => {
   const data = partialInput(standSchema, await r.json());
   if (data.businessId) await prisma.business.findUniqueOrThrow({ where: { id: data.businessId } });
   const stand = await prisma.$transaction(async (tx) => {
-    const s = await tx.stand.update({ where: { id }, data });
+    const previous = await tx.stand.findUniqueOrThrow({ where: { id } });
+    const s = await tx.stand.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(data.businessId && data.businessId !== previous.businessId ? { outletId: null } : {}),
+      },
+    });
     await tx.adminAudit.create({
       data: { actorEmail: ownerEmail(r), action: 'stand.update', targetId: id },
     });

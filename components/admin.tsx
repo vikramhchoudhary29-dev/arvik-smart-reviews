@@ -53,6 +53,7 @@ export function Shell({ section, children }: { section: string; children: React.
           {[
             ['Dashboard', ''],
             ['Businesses', 'businesses'],
+            ['Outlets', 'outlets'],
             ['NFC Stands', 'stands'],
             ['Review Templates', 'templates'],
             ['Analytics', 'analytics'],

@@ -38,3 +38,7 @@ No schema, migration, authentication, event writer, template engine or copy/Goog
 - Fixed owner settings DTO/client allowlist; added scoped staff soft-delete action and hidden/deleted exclusions.
 - Added Business renewal contact, create/edit label, subscription shortcut and navigation; switched platform home/service description to yearly subscription wording.
 - Added two-table/two-column additive migration; extended API/browser regressions and documentation. No runtime dependency or external paid messaging/payment service added.
+
+## v0.7.0
+
+Added Outlet schema/migration, lib/outlet-model.ts and lib/outlets.ts, admin/owner outlet APIs, components/outlets.tsx and /admin/outlets. Updated admin/owner navigation, public lookup/suggestions/events/customer UI, event attribution, category options and staff filtering. Stand reassignment clears obsolete default outlet. Extended isolated integration/browser fixtures/tests; updated version, project context, development log, setup/migration and validation documentation. No runtime dependencies or environment variables added.

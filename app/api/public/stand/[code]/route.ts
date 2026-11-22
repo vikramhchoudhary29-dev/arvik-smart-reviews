@@ -12,12 +12,26 @@ export const GET = route(async (r, c) => {
   const stand = await activeStand(code);
   if (!stand || !googleReviewUrl(stand.business.googleReviewUrl)) return unavailable();
   const b = stand.business;
+  const outlets = await prisma.outlet.findMany({
+    where: { businessId: b.id, active: true },
+    select: { id: true, name: true, category: true },
+    orderBy: { name: 'asc' },
+  });
+  const experience = await publicExperience(b.id);
+  const experiences = outlets.map((o) => ({
+    ...o,
+    aspects: categories[o.category] || categories.general,
+    experiencePrompt: experiencePrompt(o.category),
+    ...experience(o.category, o.id),
+  }));
   return NextResponse.json(
     {
+      outlets: experiences,
+      defaultOutletId: outlets.some((o) => o.id === stand.outletId) ? stand.outletId : null,
       businessName: b.name,
       location: [b.city, b.state].filter(Boolean).join(', '),
       experiencePrompt: experiencePrompt(b.category),
-      ...(await publicExperience(b.id, b.category)),
+      ...experience(b.category),
       category: b.category,
       logo: b.logo,
       coverImage: b.coverImage,

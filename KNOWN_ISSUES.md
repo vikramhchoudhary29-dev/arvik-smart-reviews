@@ -42,3 +42,7 @@ The reported missing-generated-client/JSON-parser failures are corrected. Existi
 - WhatsApp reminder links open a prepared chat; delivery/read/sent status is not tracked or claimed. Use the dedicated renewal number and manually review/send the message.
 - Expiry never disables NFC/QR public pages under the selected warning-only policy. New tables start empty; Super Admin must enter the actual agreed annual fee and real payment records.
 - Removed staff are hidden/unselectable but retained internally to preserve historical mentions; Delete is not permanent erasure. Subscription dates are annual immutable term boundaries; edit fee/notes or append a renewal term.
+
+## v0.7.0 outlets
+
+Live migration/deployment await approval. Each staff member has one outlet or General assignment; customers select one outlet per review draft. Business-wide staff toggle/custom question applies across outlets. Deactivation replaces outlet deletion to preserve historical event attribution. Historical events remain unassigned. Outlet table has four UTC presets; custom date/export remains in the existing overall Reports module, not in the outlet table. A click is not a confirmed published review.

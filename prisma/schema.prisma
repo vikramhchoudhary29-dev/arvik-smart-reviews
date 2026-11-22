@@ -26,31 +26,31 @@ enum EventType {
 }
 
 model Business {
-  id              String             @id @default(cuid())
+  id              String               @id @default(cuid())
   name            String
-  category        String             @default("general")
-  contactName     String             @default("")
-  phone           String             @default("")
-  whatsapp        String             @default("")
-  renewalWhatsapp String             @default("")
-  email           String             @default("")
-  address         String             @default("")
-  city            String             @default("")
-  state           String             @default("")
-  pincode         String             @default("")
-  googleMapsUrl   String             @default("")
-  logo            String             @default("")
-  coverImage      String             @default("")
-  description     String             @default("")
-  welcomeMessage  String             @default("")
-  internalNotes   String             @default("")
-  brandColor      String             @default("#10b981")
+  category        String               @default("general")
+  contactName     String               @default("")
+  phone           String               @default("")
+  whatsapp        String               @default("")
+  renewalWhatsapp String               @default("")
+  email           String               @default("")
+  address         String               @default("")
+  city            String               @default("")
+  state           String               @default("")
+  pincode         String               @default("")
+  googleMapsUrl   String               @default("")
+  logo            String               @default("")
+  coverImage      String               @default("")
+  description     String               @default("")
+  welcomeMessage  String               @default("")
+  internalNotes   String               @default("")
+  brandColor      String               @default("#10b981")
   linkTestedAt    DateTime?
-  slug            String             @unique
+  slug            String               @unique
   googleReviewUrl String
-  status          BusinessStatus     @default(INACTIVE)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  status          BusinessStatus       @default(INACTIVE)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
   stands          Stand[]
   customers       Customer[]
   loyaltyProgram  LoyaltyProgram?
@@ -59,6 +59,7 @@ model Business {
   owners          BusinessOwner[]
   staff           StaffMember[]
   experience      BusinessExperience?
+  outlets         Outlet[]
   subscriptions   SubscriptionPeriod[]
 }
 
@@ -66,6 +67,8 @@ model Stand {
   id           String           @id @default(cuid())
   businessId   String
   business     Business         @relation(fields: [businessId], references: [id])
+  outletId     String?
+  outlet       Outlet?          @relation(fields: [outletId], references: [id])
   code         String           @unique
   type         String           @default("NFC_QR")
   location     String           @default("")
@@ -134,6 +137,8 @@ model AnalyticsEvent {
   business   Business  @relation(fields: [businessId], references: [id])
   standId    String?
   stand      Stand?    @relation(fields: [standId], references: [id])
+  outletId   String?
+  outlet     Outlet?   @relation(fields: [outletId], references: [id])
   dedupKey   String?   @unique
   type       EventType
   createdAt  DateTime  @default(now())
@@ -141,6 +146,7 @@ model AnalyticsEvent {
   @@index([createdAt, type])
   @@index([businessId, createdAt])
   @@index([standId, createdAt])
+  @@index([outletId, createdAt])
 }
 
 model ReviewPhrase {
@@ -201,39 +207,41 @@ model BusinessOwner {
 }
 
 model BusinessExperience {
-  businessId   String   @id
-  business     Business @relation(fields: [businessId], references: [id])
-  staffEnabled Boolean  @default(false)
-  staffQuestion String  @default("")
-  updatedAt    DateTime @updatedAt
+  businessId    String   @id
+  business      Business @relation(fields: [businessId], references: [id])
+  staffEnabled  Boolean  @default(false)
+  staffQuestion String   @default("")
+  updatedAt     DateTime @updatedAt
 }
 
 model StaffMember {
-  id         String   @id @default(cuid())
+  id         String         @id @default(cuid())
   businessId String
-  business   Business @relation(fields: [businessId], references: [id])
+  business   Business       @relation(fields: [businessId], references: [id])
   name       String
-  role       String   @default("")
-  active     Boolean  @default(true)
+  role       String         @default("")
+  active     Boolean        @default(true)
   deletedAt  DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  outletId   String?
+  outlet     Outlet?        @relation(fields: [outletId], references: [id])
   mentions   StaffMention[]
 
   @@index([businessId, active])
 }
 
 model SubscriptionPeriod {
-  id             String   @id @default(cuid())
+  id             String                @id @default(cuid())
   businessId     String
-  business       Business @relation(fields: [businessId], references: [id])
-  startsOn       DateTime @db.Date
-  expiresOn      DateTime @db.Date
+  business       Business              @relation(fields: [businessId], references: [id])
+  startsOn       DateTime              @db.Date
+  expiresOn      DateTime              @db.Date
   annualFeePaise Int
-  currency       String   @default("INR")
-  notes          String   @default("")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  currency       String                @default("INR")
+  notes          String                @default("")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   payments       SubscriptionPayment[]
 
   @@unique([businessId, startsOn])
@@ -242,14 +250,14 @@ model SubscriptionPeriod {
 }
 
 model SubscriptionPayment {
-  id             String   @id @default(cuid())
+  id             String             @id @default(cuid())
   subscriptionId String
   subscription   SubscriptionPeriod @relation(fields: [subscriptionId], references: [id])
   amountPaise    Int
-  paidOn         DateTime @db.Date
+  paidOn         DateTime           @db.Date
   method         String
-  reference      String   @default("")
-  createdAt      DateTime @default(now())
+  reference      String             @default("")
+  createdAt      DateTime           @default(now())
   voidedAt       DateTime?
 
   @@index([subscriptionId, voidedAt])
@@ -268,4 +276,21 @@ model StaffMention {
 
   @@index([businessId, createdAt])
   @@index([staffId, createdAt])
+}
+
+model Outlet {
+  id         String           @id @default(cuid())
+  businessId String
+  business   Business         @relation(fields: [businessId], references: [id])
+  name       String
+  category   String
+  active     Boolean          @default(true)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  staff      StaffMember[]
+  stands     Stand[]
+  events     AnalyticsEvent[]
+
+  @@unique([businessId, name])
+  @@index([businessId, active])
 }

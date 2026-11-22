@@ -1,4 +1,7 @@
 export const categories: Record<string, string[]> = {
+  cafe: ['Coffee', 'Food', 'Ambience', 'Service'],
+  bar: ['Drinks', 'Music', 'Ambience', 'Service'],
+  thali: ['Taste', 'Variety', 'Freshness', 'Service'],
   hotel: ['Rooms', 'Cleanliness', 'Hospitality', 'Location', 'Facilities'],
   restaurant: ['Food', 'Service', 'Cleanliness', 'Ambience', 'Staff'],
   optical: ['Frame collection', 'Lens quality', 'Eye testing', 'Staff assistance', 'Pricing'],

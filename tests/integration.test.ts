@@ -34,6 +34,9 @@ test('isolated PostgreSQL migrations, owner APIs and public journey', async (t) 
       'utf8',
     ),
   );
+  await db.exec(
+    readFileSync('prisma/migrations/20261122090000_business_outlets/migration.sql', 'utf8'),
+  );
   const server = new PGLiteSocketServer({ db, port: 0, host: '127.0.0.1', maxConnections: 8 });
   await server.start();
   process.env.DATABASE_URL =
@@ -206,7 +209,7 @@ test('isolated PostgreSQL migrations, owner APIs and public journey', async (t) 
     await t.test('idempotent starter seed and real active phrase generation', async () => {
       const { seed } = await import('../lib/seed');
       for (let i = 0; i < 2; i++) await seed(prisma);
-      assert.equal(await prisma.reviewPhrase.count(), 99);
+      assert.equal(await prisma.reviewPhrase.count(), 126);
       const r = await lookup.GET(req('/'), ctx({ code }));
       assert.equal((await r.json()).businessName, 'Test Optical');
       const result = await suggestions.POST(

@@ -1,4 +1,29 @@
 import { test, expect } from '@playwright/test';
+test('outlet selection changes experience and staff while retaining one Google destination', async ({
+  page,
+}) => {
+  await page.goto('/r/browser-test');
+  await page.getByLabel('Which outlet did you visit?').selectOption('browser-cafe');
+  await expect(page.getByRole('button', { name: 'Coffee', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Lens quality', exact: true })).toHaveCount(0);
+  // Existing custom/default business question is retained; staff choices are outlet-scoped.
+  const staffSelect = page
+    .locator('select')
+    .filter({ has: page.locator('option', { hasText: 'Cafe Host' }) });
+  await expect(staffSelect).toContainText('Cafe Host');
+  await expect(staffSelect).not.toContainText('Priya');
+  await page.getByRole('button', { name: 'Coffee', exact: true }).click();
+  await staffSelect.selectOption({ label: 'Cafe Host' });
+  await page.getByRole('button', { name: 'Generate three suggestions' }).click();
+  await expect(page.getByLabel('Your review — freely editable')).toHaveValue(
+    /Hotel Cafe.*Cafe Host/,
+  );
+  await page.screenshot({ path: 'test-results/outlet-review-mobile.png', fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByLabel('Which outlet did you visit?').selectOption('');
+  await expect(page.getByLabel('Your review — freely editable')).toHaveValue('');
+  await expect(page.getByRole('button', { name: 'Lens quality', exact: true })).toBeVisible();
+});
 test('mobile genuine review, three drafts, edit, copy success and same-tab navigation', async ({
   page,
   context,

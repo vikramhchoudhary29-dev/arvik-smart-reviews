@@ -96,3 +96,12 @@ Prisma Client was also generated in the user's actual Downloads project; constru
 ### v0.6.0 production migration evidence
 
 User-approved additive migration applied to existing production target after old migration checksums/pending set were verified. Before/after compared every original field in business, stand, template, event, owner, experience, staff and mention rows; all preserved. New subscription/payment tables empty and added fields at defaults. No production payment/plan/staff deletion or WhatsApp delivery test was performed. Live UI authenticated mutations remain verified through isolated browser/API tests rather than altering client records to create proof.
+
+## v0.7.0 outlet verification — 2026-11-22
+
+- npm test: 46 passed, 0 failed on final code. Disposable PGlite migrations and actual route handlers; Firebase token verifier mocked only inside isolated tests.
+- npm run test:e2e with installed Chrome: 16 passed, 0 failed on final run. Public journey runs the production Next build; owner/admin component fixture uses real handlers and disposable SQL with mocked Firebase client/router. Google outbound requests intercepted; no real reviews submitted.
+- npm run build, npm run typecheck, npm run format:check: passed.
+- New coverage: tenant/outlet/staff boundaries, active outlet visibility, preserved Google destination and stand codes, category options, staff-scoped generated drafts, duplicate generation/click deduplication, outlet activity grouping, owner outlet save/default assignment persistence and Super Admin management, mobile overflow and existing billing/reporting flows.
+- Reviewed mobile customer and mobile/desktop management screenshots. The initial new owner browser selector timed out; selecting the Category combobox by accessible role fixed the test, and the entire 16-test suite passed afterward.
+- Live database and Vercel were not modified for v0.7.0. Live authenticated onboarding and real NFC hardware checks remain for post-approval verification.

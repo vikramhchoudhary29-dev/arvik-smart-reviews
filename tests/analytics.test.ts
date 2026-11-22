@@ -94,6 +94,7 @@ test('reporting integration: real aggregate data, stable scopes and independentl
     '20261112170000_analytics_time_index',
     '20261116090000_business_owner_experience',
     '20261117090000_yearly_subscriptions_staff_removal',
+    '20261122090000_business_outlets',
   ])
     await db.exec(readFileSync('prisma/migrations/' + migration + '/migration.sql', 'utf8'));
   const server = new PGLiteSocketServer({ db, port: 0, maxConnections: 4 });

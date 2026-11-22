@@ -7,6 +7,7 @@ import { readApiResponse } from '@/lib/api-response';
 import type { AnalyticsSnapshot } from '@/lib/analytics-model';
 import { AnalyticsWorkspace } from './analytics-workspace';
 import { api } from './admin';
+import { OutletManager } from './outlets';
 import { OwnerSubscription } from './owner-subscription';
 
 type Business = {
@@ -41,6 +42,7 @@ const sections = [
   'My Stands',
   'Reports',
   'Staff',
+  'Outlets',
   'Branding',
   'Subscription',
 ] as const;
@@ -155,7 +157,9 @@ export default function OwnerDashboard() {
               businessId={selected}
               full={section === 'Subscription'}
             />
-            {section === 'Subscription' ? null : section === 'Overview' ||
+            {section === 'Outlets' ? (
+              <OutletManager key={selected} businessId={selected} />
+            ) : section === 'Subscription' ? null : section === 'Overview' ||
               section === 'Analytics' ||
               section === 'Reports' ? (
               <OwnerAnalytics key={selected + section} businessId={selected} section={section} />
