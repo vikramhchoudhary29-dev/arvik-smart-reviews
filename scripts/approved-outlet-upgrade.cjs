@@ -29,7 +29,11 @@ async function main() {
     throw Error('Wrong deployment environment');
   if (process.argv[2] !== migration || !process.argv[3])
     throw Error('Explicit approved migration and backup public key required');
-  const publicKey = crypto.createPublicKey(Buffer.from(process.argv[3], 'base64').toString());
+  const publicKey = crypto.createPublicKey(
+    process.argv[3].startsWith('@')
+      ? fs.readFileSync(process.argv[3].slice(1), 'utf8')
+      : Buffer.from(process.argv[3], 'base64').toString(),
+  );
   const url = new URL(process.env.DATABASE_URL);
   if (!url.hostname.endsWith('.neon.tech')) throw Error('Wrong database provider');
   url.hostname = url.hostname.replace('-pooler.', '.');
