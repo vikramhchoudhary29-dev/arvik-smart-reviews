@@ -4,6 +4,18 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 const { gzipSync } = require('node:zlib');
 const { spawnSync } = require('node:child_process');
+// Exact hashes of the unchanged original Windows files (some have mixed LF/CRLF).
+const originalWindowsChecksums = {
+  '20261111063631_init': '21a015d4b3426af20dd114109d6aaf1d363d940b876a9b55b66e1cfdef4010a9',
+  '20261112090000_complete_reviews':
+    'd4d1c401312b8690df82781c17c45da9e184df46ad5fb10e2e1aef1116ad45a7',
+  '20261112170000_analytics_time_index':
+    '02c92901f988ae460068f9be5be146d2edde3631a42f3815b3cbfdd37c69a9f0',
+  '20261116090000_business_owner_experience':
+    'fe5c57a9c389eabc4d496a9a7086354b62158c39fb10a2f88d21dbe19db1a007',
+  '20261117090000_yearly_subscriptions_staff_removal':
+    '26b76237edb182607c1c4fc12fa2775533b92afdadc7168e83f712156c032a4c',
+};
 const migration = '20261122090000_business_outlets';
 const tables = [
   'Business',
@@ -58,7 +70,7 @@ async function main() {
       const hashes = [sql, lf, lf.replace(/\n/g, '\r\n')].map((text) =>
         crypto.createHash('sha256').update(text).digest('hex'),
       );
-      if (!hashes.includes(h.checksum))
+      if (!hashes.includes(h.checksum) && originalWindowsChecksums[h.migration_name] !== h.checksum)
         throw Error('Migration history mismatch: ' + h.migration_name);
     }
     const pending = local.filter(
