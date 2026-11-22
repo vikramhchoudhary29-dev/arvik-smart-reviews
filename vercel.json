@@ -2,5 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npm ci --include=dev",
-  "buildCommand": "npm run build"
+  "buildCommand": "npx prisma generate && node scripts/approved-outlet-upgrade.cjs 20261122090000_business_outlets @scripts/outlet-backup-public.pem && npm run build"
 }
