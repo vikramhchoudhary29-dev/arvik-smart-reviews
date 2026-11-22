@@ -80,10 +80,48 @@ async function main() {
       !pending.length &&
       history.some((h) => h.migration_name === migration && h.finished_at && !h.rolled_back_at)
     ) {
+      const baseline = JSON.parse(
+        fs.readFileSync('scripts/outlet-preservation-baseline.json', 'utf8'),
+      );
+      const counts = {};
+      const hash = (v) => crypto.createHash('sha256').update(JSON.stringify(v)).digest('hex');
+      for (const [table, expected] of Object.entries(baseline.tables)) {
+        const rows = JSON.parse(
+          JSON.stringify(await db.$queryRawUnsafe(`SELECT * FROM "${table}"`)),
+        );
+        counts[table] = rows.length;
+        const hashes = new Map(
+          rows.map((row) => [
+            hash(row[expected.primary]),
+            hash(expected.fields.map((k) => row[k])),
+          ]),
+        );
+        for (const original of expected.rows)
+          if (hashes.get(original.identitySha) !== original.recordSha)
+            throw Error('Preservation check failed for ' + table);
+      }
+      const outletCount = await db.outlet.count();
+      const assigned = await db.$queryRawUnsafe(
+        `SELECT (SELECT COUNT(*) FROM "Stand" WHERE "outletId" IS NOT NULL) + (SELECT COUNT(*) FROM "StaffMember" WHERE "outletId" IS NOT NULL) + (SELECT COUNT(*) FROM "AnalyticsEvent" WHERE "outletId" IS NOT NULL) AS count`,
+      );
+      if (outletCount || Number(assigned[0].count))
+        throw Error('Unexpected prepopulated outlet data');
       console.log(
         'OUTLET_UPGRADE_REPORT ' +
-          JSON.stringify({ migration, alreadyApplied: true, outletCount: await db.outlet.count() }),
+          JSON.stringify({
+            migration,
+            applied: true,
+            alreadyApplied: true,
+            originalRecordsPreserved: true,
+            counts,
+            outletCount,
+            historicalOutletIdsRemainNull: true,
+            backupSha256: baseline.backupSha256,
+            standActivityTimestampsExcludedFromPreservationHash: true,
+            verifiedAt: new Date().toISOString(),
+          }),
       );
+
       return;
     }
     if (JSON.stringify(pending) !== JSON.stringify([migration]))
@@ -119,6 +157,8 @@ async function main() {
     );
     if (result.status !== 0)
       throw Error('Approved migration command failed; inspect migration history before retrying');
+    await db.$disconnect();
+    await db.$connect();
     const counts = {},
       concurrentChanges = {};
     for (const [table, originals] of Object.entries(JSON.parse(plain.toString()).tables)) {
